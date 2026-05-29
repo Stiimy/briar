@@ -66,7 +66,7 @@ def scan(url, repo, provider, output, quick, deep):
         console.print("[red]Start Ollama first[/red]"); sys.exit(1)
     
     findings = []
-    all_agents = ["injection","xss","ssrf","auth","authz","csrf","upload","traversal","rce","api","secrets"]
+    all_agents = ["recon","injection","xss","ssrf","auth","authz","csrf","upload","traversal","rce","api","secrets"]
     agents_to_run = all_agents[:agent_count]
     
     with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), console=console) as progress:

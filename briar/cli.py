@@ -76,6 +76,8 @@ def scan(url, repo, provider, output, quick):
     # Generate reports
     progress2 = progress.add_task("[green]📄 Reports...", total=1)
     from briar.reports.generator import ReportGenerator
+from briar.charts.generator import ChartGenerator
+from briar.slides.pptx_gen import SlideGenerator
     gen = ReportGenerator(url, findings, output)
     reports = gen.all_formats()
     progress.advance(progress2)

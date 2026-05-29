@@ -26,7 +26,6 @@ briar serve  # Web dashboard → http://localhost:8233
 | Category | Details |
 |----------|---------|
 | 🤖 **AI Providers** | Ollama (free), OpenAI, Claude, DeepSeek, Groq, Mistral + 7 more |
-[![Version](https://img.shields.io/badge/version-0.1.0-purple)](https://github.com/Stiimy/briar/releases)
 | 🛡️ **Security Agents** | Injection, XSS, SSRF, Auth, AuthZ, CSRF, Upload, Traversal, RCE, API, Secrets |
 | 📄 **Reports** | Markdown, Word (.docx), Excel (.xlsx), Obsidian (mindmap + linked notes) |
 | 🎨 **Slides** | PowerPoint (.pptx), HTML/Canva-style |
@@ -48,17 +47,8 @@ briar/
 └── web.py           # FastAPI dashboard
 ```
 
-## Why Briar?
-
-| | Other tools | Briar |
-|---|------------|-------|
-| Price | $$$ (API keys) | Free (Ollama) |
-[![Version](https://img.shields.io/badge/version-0.1.0-purple)](https://github.com/Stiimy/briar/releases)
-| Providers | 1-2 | 13 |
-| Report formats | 1 | 5 |
-| Language | EN only | FR/EN bilingual |
-| Docker | Mandatory | Optional |
+---
 
 ## License
 
-AGPL-3.0 — Free forever. Built in France 🇫🇷 🇫🇷
+AGPL-3.0 — age of stars.

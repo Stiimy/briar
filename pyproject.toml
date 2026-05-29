@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "briar"
+version = "0.1.0"
+description = "Autonomous AI Pentester — find vulnerabilities before hackers do"
+readme = "README.md"
+license = {text = "AGPL-3.0"}
+authors = [{name = "Stiimy", email = "keran.joblon@outlook.fr"}]
+keywords = ["security", "pentest", "vulnerability", "owasp", "ai", "ollama"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Security",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.31",
+    "click>=8.1",
+    "rich>=13.7",
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+]
+
+[project.optional-dependencies]
+full = [
+    "python-docx>=1.1",
+    "openpyxl>=3.1",
+    "python-pptx>=0.6",
+    "matplotlib>=3.8",
+    "plotly>=5.18",
+    "selenium>=4.15",
+]
+
+[project.scripts]
+briar = "briar.cli:cli"
+
+[project.urls]
+Homepage = "https://github.com/Stiimy/briar"
+Repository = "https://github.com/Stiimy/briar"
+Issues = "https://github.com/Stiimy/briar/issues"

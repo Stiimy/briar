@@ -1,4 +1,5 @@
 from .analyzer import SecurityAnalyzer
+from .recon import ReconAgent
 from .injection import InjectionAgent
 from .xss import XSSAgent
 from .ssrf import SSRFAgent
@@ -12,7 +13,7 @@ from .api import APIAgent
 from .secrets import SecretsAgent
 
 AGENTS = {
-    "injection": InjectionAgent, "xss": XSSAgent, "ssrf": SSRFAgent,
+    "recon": ReconAgent, "injection": InjectionAgent, "xss": XSSAgent, "ssrf": SSRFAgent,
     "auth": AuthAgent, "authz": AuthZAgent, "csrf": CSRFAgent,
     "upload": UploadAgent, "traversal": TraversalAgent,
     "rce": RCEAgent, "api": APIAgent, "secrets": SecretsAgent,

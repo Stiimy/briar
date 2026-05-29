@@ -80,7 +80,8 @@ url: {f.get('url', self.target)}
         
         main += f"\n## Mindmap\n![[canvas.canvas]]\n"
         
-        path = os.path.join(self.output_dir, f"Security Audit — {self.target}.md")
+        safe_target = self.target.replace("://", "_").replace("/", "_").replace(":", "_")
+        path = os.path.join(self.output_dir, f"Security Audit — {safe_target}.md")
         with open(path, "w") as f:
             f.write(main)
         

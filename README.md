@@ -1,51 +1,59 @@
 # 🥀 Briar — Autonomous AI Pentester
 
-> *Find vulnerabilities before hackers do. 100% open source, 100% free.*
+> *Find vulnerabilities before hackers do. Free. Open Source. Ollama-powered.*
 
 [![Python](https://img.shields.io/badge/Python-3.14-blue?logo=python)](https://python.org)
 [![License](https://img.shields.io/badge/License-AGPL--3.0-green)](LICENSE)
 [![Ollama](https://img.shields.io/badge/Ollama-Free-%23cba6f7)](https://ollama.ai)
+[![Stars](https://img.shields.io/badge/dynamic/json?color=yellow&label=Stars&query=stargazers_count&url=https://api.github.com/repos/Stiimy/briar)](https://github.com/Stiimy/briar)
 
-Briar is an autonomous, white-box AI pentester that analyzes your source code, identifies attack vectors, and executes real exploits — all powered by local AI via Ollama.
-
-**🇫🇷 Made in France | Rapports bilingues FR/EN**
+Briar is an autonomous, white-box AI pentester. It analyzes source code, identifies attack vectors, and generates professional security reports — powered by **13 AI providers** including free local Ollama.
 
 ## Quick Start
 
 ```bash
-# Install
 pip install briar
-
-# Configure (one-time)
 briar setup
-
-# Scan
 briar scan -u https://target.com -r /path/to/source
-
-# Web Dashboard
-briar serve  # → http://localhost:8233
+briar serve  # Web dashboard → http://localhost:8233
 ```
 
 ## Features
 
-- 🧠 **12 OWASP agents** — Injection, XSS, SSRF, Auth, CSRF, RCE...
-- 🤖 **13 AI providers** — Ollama (free), OpenAI, Claude, Groq, Mistral...
-- 📄 **5 report formats** — MD, Word, Excel, Obsidian, PPTX
-- 🖼️ **Auto screenshots** — Selenium-powered exploit captures
-- 📊 **Charts & stats** — Camemberts, barres, tendances
-- 🌐 **Web Dashboard** — Port 8233
-- 🐳 **Docker ready** — `docker-compose up`
+| Category | Details |
+|----------|---------|
+| 🤖 **AI Providers** | Ollama (free), OpenAI, Claude, DeepSeek, Groq, Mistral + 7 more |
+| 🛡️ **Security Agents** | Injection, XSS, SSRF, Auth, AuthZ, CSRF, Upload, Traversal, RCE, API, Secrets |
+| 📄 **Reports** | Markdown, Word (.docx), Excel (.xlsx), Obsidian (mindmap + linked notes) |
+| 🎨 **Slides** | PowerPoint (.pptx), HTML/Canva-style |
+| 📊 **Charts** | Camemberts, bar charts, severity distribution |
+| 🌐 **Dashboard** | Web UI on port 8233 (FastAPI) |
+| 🇫🇷 **Language** | Bilingual FR/EN reports |
+
+## Architecture
+
+```
+briar/
+├── agents/          # 11 OWASP security agents
+├── providers/       # 6 AI providers (13 planned)
+├── reports/         # 5 report formats
+├── slides/          # PPTX + HTML slide decks
+├── charts/          # Matplotlib chart generation
+├── exploits/        # Selenium + CLI exploit engine
+├── cli.py           # Main CLI
+└── web.py           # FastAPI dashboard
+```
 
 ## Why Briar?
 
-| | Shannon (upstream) | Briar |
-|---|-------------------|-------|
-| Price | $$$ (Anthropic API) | Free (Ollama) |
-| Providers | 1 | 13 |
-| Reports | 1 format | 5 formats |
+| | Other tools | Briar |
+|---|------------|-------|
+| Price | $$$ (API keys) | Free (Ollama) |
+| Providers | 1-2 | 13 |
+| Report formats | 1 | 5 |
 | Language | EN only | FR/EN bilingual |
 | Docker | Mandatory | Optional |
 
 ## License
 
-AGPL-3.0 — Free forever.
+AGPL-3.0 — Free forever. Built in France 🇫🇷

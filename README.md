@@ -61,4 +61,4 @@ briar/
 
 ## License
 
-AGPL-3.0 — Free forever. Built in France 🇫🇷
+AGPL-3.0 — Free forever. Built in France 🇫🇷 🇫🇷

@@ -1,5 +1,7 @@
 """Briar Chart Generator — camemberts, barres, courbes 📊"""
 import os
+import matplotlib
+matplotlib.use('Agg')  # headless — pas de GUI
 
 class ChartGenerator:
     def __init__(self, findings: list, output_dir: str = "./reports/charts"):

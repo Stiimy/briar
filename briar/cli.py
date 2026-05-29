@@ -69,42 +69,98 @@ def setup():
     console.print(f"\n[green]Provider: {provider}[/green]")
 
 @cli.command()
-@click.option("-u", "--url", required=True, help="Target URL")
+@click.option("-u", "--url", required=False, help="Target URL")
 @click.option("-r", "--repo", help="Source code path")
 @click.option("-p", "--provider", default="ollama", help="AI provider")
 @click.option("-o", "--output", default="./reports", help="Output dir")
+@click.option("-c", "--config", "config_path", help="YAML config file (auth, rules, target)")
 @click.option("--quick", is_flag=True, help="Quick scan (4 agents)")
 @click.option("--deep", is_flag=True, help="Deep scan (all 12 agents + browser)")
-def scan(url, repo, provider, output, quick, deep):
+@click.option("--resume", "resume_ws", help="Resume a workspace by name")
+def scan(url, repo, provider, output, config_path, quick, deep, resume_ws):
     """Run a pentest scan"""
+    # Load config file if provided
+    if config_path:
+        from briar.config import load_config, build_login_flow
+        config = load_config(config_path)
+        url = url or config.get("target", {}).get("url", "")
+        provider = config.get("provider", provider)
+        output = config.get("output", output)
+        mode = config.get("mode", "standard")
+        auth_flow = build_login_flow(config)
+        console.print(f"[dim]Config loaded: {len(config.get('rules',{}).get('avoid',[]))} avoid rules, auth={'yes' if auth_flow else 'no'}[/dim]")
+    else:
+        auth_flow = None
+
+    if not url:
+        console.print("[red]URL required (-u or config file)[/red]"); sys.exit(1)
+
     mode = "deep" if deep else "quick" if quick else "standard"
     agent_count = 12 if deep else 4 if quick else 8
-    
+
+    # Resume existing workspace
+    from briar.core.workspace import Workspace
+    if resume_ws:
+        ws = Workspace.load(resume_ws)
+        findings = ws.get_findings()
+        all_agents = ["recon","injection","xss","ssrf","auth","authz","csrf","upload","traversal","rce","api","secrets"]
+        agents_to_run = ws.get_remaining_agents(all_agents)
+        console.print(Panel.fit(
+            f"[bold red]Briar Resume[/bold red]\n"
+            f"[cyan]{url}[/cyan] | [yellow]{provider}[/yellow] | [dim]{len(findings)} findings so far, {len(agents_to_run)} agents left[/dim]",
+            title="Resume"))
+    else:
+        ws = Workspace(url, mode)
+        findings = []
+        all_agents = ["recon","injection","xss","ssrf","auth","authz","csrf","upload","traversal","rce","api","secrets"]
+        agents_to_run = all_agents[:agent_count]
+
     console.print(Panel.fit(
         f"[bold red]Briar Scan[/bold red]\n"
-        f"[cyan]{url}[/cyan] | [yellow]{provider}[/yellow] | [dim]{mode} ({agent_count} agents)[/dim]",
+        f"[cyan]{url}[/cyan] | [yellow]{provider}[/yellow] | [dim]{mode} ({agent_count} agents)[/dim]"
+        + (f"\n[dim]Workspace: {ws.name}[/dim]" if ws else ""),
         title="Scan"))
-    
+
     if provider == "ollama" and not check_ollama():
         console.print("[red]Start Ollama first[/red]"); sys.exit(1)
-    
-    findings = []
-    all_agents = ["recon","injection","xss","ssrf","auth","authz","csrf","upload","traversal","rce","api","secrets"]
-    agents_to_run = all_agents[:agent_count]
-    
+
+    # Authenticate if config provides credentials
+    if auth_flow:
+        from briar.core.http import HTTPClient
+        http = HTTPClient(timeout=10)
+        creds = auth_flow.get("credentials", {})
+        login_url = url.rstrip("/") + auth_flow.get("login_url", "/login").lstrip("/")
+        method = auth_flow.get("method", "form")
+        try:
+            if method == "json":
+                resp = http.post(login_url, json=creds)
+            else:
+                resp = http.post(login_url, data=creds)
+            console.print(f"[green]Auth: {resp.status_code} on {login_url}[/green]")
+        except Exception as e:
+            console.print(f"[yellow]Auth failed: {e}[/yellow]")
+
     with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), console=console) as progress:
         task = progress.add_task("[cyan]Scanning...", total=len(agents_to_run))
         from briar.agents import run_agent
-        
+
         for agent_name in agents_to_run:
             progress.update(task, description=f"[yellow]{agent_name}...")
             try:
                 result = run_agent(agent_name, provider, url=url, repo_path=repo)
                 if result and "error" not in result:
                     findings.append(result)
+                ws.checkpoint_agent(agent_name, [result] if result and "error" not in result else [])
             except Exception as e:
                 findings.append({"type": agent_name, "severity": "Error", "url": url, "analysis": str(e), "agent": agent_name})
             progress.advance(task)
+
+        # Exploit validation — replay High/Critical findings
+        progress.update(task, description="[yellow]Validating exploits...")
+        from briar.core.validator import ExploitValidator
+        validator = ExploitValidator()
+        findings = validator.validate_all(findings, url)
+        progress.update(task, description=f"[dim]{validator.summary()}[/dim]")
         
         # Deep mode: active exploits
         if deep:
@@ -228,6 +284,74 @@ def scan(url, repo, provider, output, quick, deep):
     table.add_row("Charts", f"{output}/charts/")
     console.print(table)
     console.print("\n[dim]Open reports or launch dashboard: briar serve[/dim]")
+
+@cli.command()
+@click.argument("workspace_name", required=False)
+def resume(workspace_name):
+    """Resume an interrupted scan from a workspace"""
+    from briar.core.workspace import Workspace
+    if workspace_name:
+        # Re-run scan with --resume flag
+        import subprocess, sys
+        ws_path = os.path.join(os.path.expanduser("~/.briar/workspaces"), workspace_name)
+        if not os.path.exists(ws_path):
+            workspaces = Workspace.list_workspaces()
+            console.print(f"[red]Workspace not found: {workspace_name}[/red]")
+            if workspaces:
+                console.print("\n[dim]Available workspaces:[/dim]")
+                for w in workspaces[:10]:
+                    console.print(f"  {w}")
+            sys.exit(1)
+        console.print(f"[green]Resuming workspace: {workspace_name}[/green]")
+        console.print("[dim]Run: briar scan --resume {workspace_name}[/dim]")
+    else:
+        workspaces = Workspace.list_workspaces()
+        if not workspaces:
+            console.print("[dim]No workspaces found.[/dim]")
+            return
+        console.print("[bold]Saved workspaces:[/bold]")
+        for w in workspaces[:20]:
+            console.print(f"  [cyan]{w}[/cyan]")
+
+@cli.command()
+@click.argument("workspace_name", required=False)
+def workspaces(workspace_name):
+    """List all saved workspaces"""
+    from briar.core.workspace import Workspace
+    import json
+    if workspace_name:
+        try:
+            ws = Workspace.load(workspace_name)
+            console.print(f"[bold]Workspace: {ws.name}[/bold]")
+            console.print(f"  Target: {ws._state.get('target','?')}")
+            console.print(f"  Mode: {ws._state.get('mode','?')}")
+            console.print(f"  Agents done: {len(ws._state.get('agents_completed',[]))}")
+            console.print(f"  Findings: {ws._state.get('findings_count',0)}")
+            console.print(f"  Resume: briar scan --resume {ws.name}")
+        except Exception as e:
+            console.print(f"[red]{e}[/red]")
+    else:
+        workspaces = Workspace.list_workspaces()
+        if not workspaces:
+            console.print("[dim]No workspaces yet. Run a scan first.[/dim]")
+            return
+        table = Table(title="Workspaces")
+        table.add_column("Name", style="cyan")
+        table.add_column("Target")
+        table.add_column("Findings", style="green")
+        table.add_column("Agents Done")
+        for w_name in workspaces[:20]:
+            try:
+                ws = Workspace.load(w_name)
+                table.add_row(
+                    w_name[:40], 
+                    str(ws._state.get("target", "?"))[:30],
+                    str(ws._state.get("findings_count", 0)),
+                    str(len(ws._state.get("agents_completed", [])))
+                )
+            except:
+                table.add_row(w_name[:40], "?","?","?")
+        console.print(table)
 
 @cli.command()
 def serve():

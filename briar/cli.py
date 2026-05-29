@@ -8,6 +8,18 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 
 console = Console()
 
+BANNER = """
+[bold red]
+  ██████╗ ██████╗ ██╗ █████╗ ██████╗ 
+  ██╔══██╗██╔══██╗██║██╔══██╗██╔══██╗
+  ██████╔╝██████╔╝██║███████║██████╔╝
+  ██╔══██╗██╔══██╗██║██╔══██║██╔══██╗
+  ██████╔╝██║  ██║██║██║  ██║██║  ██║
+  ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝[/bold red]
+[cyan]              Autonomous AI Pentester[/cyan]
+[dim]         11 providers · 12 agents · AGPL-3.0[/dim]
+"""
+
 def check_ollama():
     from briar.providers import get_provider
     try:
@@ -20,11 +32,14 @@ def check_ollama():
     console.print("[yellow]Ollama not running[/yellow]")
     return None
 
-@click.group()
-@click.version_option(version="0.1.0")
-def cli():
+@click.group(invoke_without_command=True)
+@click.version_option(version="0.3.0")
+@click.pass_context
+def cli(ctx):
     """Briar — Autonomous AI Pentester"""
-    pass
+    if ctx.invoked_subcommand is None:
+        console.print(BANNER)
+        console.print("\n[dim]Run [cyan]briar --help[/cyan] for commands[/dim]\n")
 
 @cli.command()
 def setup():

@@ -96,35 +96,45 @@ input:focus{{outline:none;border-color:#B847F0}}
 </body></html>"""
 
 @app.get("/scan")
-async def scan(url: str, provider: str = "ollama", background_tasks: BackgroundTasks = None):
+async def scan(url: str, provider: str = "ollama", mode: str = "standard", background_tasks: BackgroundTasks = None):
     """Launch a new scan"""
     scan_record = {
         "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "target": url,
         "provider": provider,
+        "mode": mode,
         "status": "running",
         "findings": 0
     }
     save_scan(scan_record)
     
-    # Background scan
     def run_scan():
         from briar.agents import run_agent
-        findings = 0
-        for agent_name in ["injection","xss","ssrf","auth"]:
+        all_agents = ["recon","injection","xss","ssrf","auth","authz","csrf","upload","traversal","rce","api","secrets"]
+        agent_count = 12 if mode == "deep" else 4 if mode == "quick" else 8
+        agents = all_agents[:agent_count]
+        findings_count = 0
+        for agent_name in agents:
             try:
                 result = run_agent(agent_name, provider, url=url)
                 if result and "error" not in result:
-                    findings += 1
+                    findings_count += 1
             except: pass
-        scan_record["status"] = "done"
-        scan_record["findings"] = findings
-        save_scan(scan_record)
+        
+        scans = load_scans()
+        for s in scans:
+            if s["target"] == url and s.get("status") == "running":
+                s["status"] = "done"
+                s["findings"] = findings_count
+                break
+        os.makedirs(os.path.dirname(SCANS_FILE), exist_ok=True)
+        with open(SCANS_FILE, "w") as f:
+            json.dump(scans, f, indent=2)
     
     if background_tasks:
         background_tasks.add_task(run_scan)
     
-    return {"message": "Scan started", "url": url, "provider": provider}
+    return {"message": "Scan started", "url": url, "provider": provider, "mode": mode, "agents": 12 if mode=="deep" else 4 if mode=="quick" else 8}
 
 @app.get("/health")
 async def health():

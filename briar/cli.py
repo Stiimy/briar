@@ -30,15 +30,38 @@ def cli():
 def setup():
     """Configure Briar"""
     console.print(Panel.fit("[bold green]Briar Setup[/bold green]\nPick your AI provider:", title="Setup"))
-    for i, (n, d) in enumerate({"1":"Ollama (free, local)","2":"OpenAI","3":"Anthropic","4":"DeepSeek","5":"Groq","6":"Mistral"}.items()):
-        console.print(f"  {i}. {d}")
+    
+    provider_list = [
+        ("1", "Ollama", "Free, local, no API key"),
+        ("2", "OpenAI", "GPT-4o, paid API"),
+        ("3", "Anthropic", "Claude, paid API"),
+        ("4", "DeepSeek", "V3/R1, cheap API"),
+        ("5", "Groq", "Fast, free tier available"),
+        ("6", "Mistral", "European, paid API"),
+        ("7", "xAI", "Grok-3, paid API"),
+        ("8", "Google", "Gemini 2.5, free tier"),
+        ("9", "OpenRouter", "200+ models, paid"),
+        ("10", "Together", "Open-source models"),
+        ("11", "Custom", "OpenAI-compatible endpoint"),
+    ]
+    for num, name, desc in provider_list:
+        console.print(f"  [cyan]{num}. {name}[/cyan] — [dim]{desc}[/dim]")
+    
     choice = click.prompt("Choice", type=int, default=1)
-    providers = {1:"ollama",2:"openai",3:"anthropic",4:"deepseek",5:"groq",6:"mistral"}
+    providers = {
+        1:"ollama",2:"openai",3:"anthropic",4:"deepseek",5:"groq",6:"mistral",
+        7:"xai",8:"google",9:"openrouter",10:"together",11:"custom"
+    }
     provider = providers.get(choice, "ollama")
+    
     os.makedirs(os.path.expanduser("~/.briar"), exist_ok=True)
     config = f"PROVIDER={provider}\n"
     if provider == "ollama":
         config += "OLLAMA_HOST=localhost\nOLLAMA_PORT=11434\nOLLAMA_MODEL=minimax-m2.5:latest\n"
+    elif provider == "custom":
+        config += f"CUSTOM_ENDPOINT={click.prompt('API Endpoint URL')}\n"
+        config += f"CUSTOM_API_KEY={click.prompt('API Key', hide_input=True)}\n"
+        config += f"CUSTOM_MODEL={click.prompt('Model name', default='gpt-4o')}\n"
     else:
         config += f"{provider.upper()}_API_KEY={click.prompt('API Key', hide_input=True)}\n"
     with open(os.path.expanduser("~/.briar/config"), "w") as f:
@@ -82,6 +105,91 @@ def scan(url, repo, provider, output, quick, deep):
             except Exception as e:
                 findings.append({"type": agent_name, "severity": "Error", "url": url, "analysis": str(e), "agent": agent_name})
             progress.advance(task)
+        
+        # Deep mode: active exploits
+        if deep:
+            from urllib.parse import urlparse, parse_qs
+            
+            # Extract params from recon findings
+            params_list = []
+            recon_result = next((f for f in findings if f.get("agent") == "Recon"), None)
+            if recon_result and recon_result.get("urls_sample"):
+                for u in recon_result["urls_sample"]:
+                    try:
+                        parsed = urlparse(u)
+                        params = list(parse_qs(parsed.query).keys())
+                        params_list.extend(params)
+                    except: pass
+            params_list = list(set(params_list)) or ["q", "id", "page"]
+            
+            # CLI exploits — SQL injection
+            from briar.exploits.browser import CLIExploiter
+            progress.update(task, description="[yellow]SQL injection exploits...")
+            for param in params_list[:5]:
+                try:
+                    result = CLIExploiter.test_sql_injection(url, param)
+                    anomalies = [t for t in result.get("tests", []) if t.get("status") != 200]
+                    if anomalies:
+                        findings.append({
+                            "type": "SQL Injection (exploit)", "severity": "High",
+                            "agent": "Exploiter", "url": url, "param": param,
+                            "tests": len(anomalies),
+                            "analysis": f"SQLi anomalies detected on param '{param}': {len(anomalies)}/{len(result['tests'])} payloads"
+                        })
+                except: pass
+            
+            # CLI exploits — SSRF
+            progress.update(task, description="[yellow]SSRF exploits...")
+            for param in ["url", "redirect", "callback", "next", "return"][:3]:
+                try:
+                    result = CLIExploiter.test_ssrf(url, param)
+                    metadata_responses = [t for t in result.get("tests", [])
+                        if "metadata" in str(t.get("payload","")).lower() and t.get("status", 0) == 200]
+                    if metadata_responses:
+                        findings.append({
+                            "type": "SSRF (exploit)", "severity": "Critical",
+                            "agent": "Exploiter", "url": url, "param": param,
+                            "analysis": f"SSRF possible: cloud metadata endpoint accessible via '{param}'"
+                        })
+                except: pass
+            
+            # Browser exploits — screenshots + XSS
+            progress.update(task, description="[yellow]Browser exploits...")
+            try:
+                from briar.exploits.browser import BrowserExploiter
+                browser = BrowserExploiter(headless=True)
+                try:
+                    screenshot_path = browser.screenshot(url, f"{output}/screenshots")
+                    findings.append({
+                        "type": "Screenshot", "severity": "Info",
+                        "agent": "Exploiter", "url": url,
+                        "analysis": f"Page screenshot saved: {screenshot_path}"
+                    })
+                    
+                    xss_payloads = [
+                        "<script>alert(1)</script>",
+                        "<img src=x onerror=alert(1)>",
+                        "\"><script>alert('XSS')</script>",
+                        "javascript:alert(1)",
+                    ]
+                    for payload in xss_payloads[:3]:
+                        xss_result = browser.test_xss(url, payload, f"{output}/screenshots")
+                        if xss_result["vulnerable"]:
+                            findings.append({
+                                "type": "XSS (exploit)", "severity": "High",
+                                "agent": "Exploiter", "url": url, "payload": payload,
+                                "screenshot": xss_result.get("screenshot"),
+                                "analysis": f"XSS confirmed: alert() triggered with payload '{payload}'"
+                            })
+                            break
+                finally:
+                    browser.quit()
+            except Exception as e:
+                findings.append({
+                    "type": "Browser Exploit", "severity": "Error",
+                    "agent": "Exploiter", "url": url,
+                    "analysis": f"Browser exploit failed: {e}"
+                })
         
         # Charts
         progress.update(task, description="[green]Generating charts...")

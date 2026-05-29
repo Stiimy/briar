@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+dist/
+*.egg-info/
+workspaces/
+reports/
+*.log
+.env
+~/.briar/

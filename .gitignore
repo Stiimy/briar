@@ -5,7 +5,7 @@ venv/
 dist/
 *.egg-info/
 workspaces/
-reports/
+/reports/
 *.log
 .env
 ~/.briar/

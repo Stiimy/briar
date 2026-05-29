@@ -1,0 +1,30 @@
+version: '3.8'
+services:
+  briar-web:
+    build: .
+    ports:
+      - "8233:8233"
+    volumes:
+      - ./workspaces:/app/workspaces
+      - ./reports:/app/reports
+    environment:
+      - PROVIDER=${PROVIDER:-ollama}
+      - OLLAMA_HOST=${OLLAMA_HOST:-host.docker.internal}
+      - OLLAMA_PORT=${OLLAMA_PORT:-11434}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    command: python -m briar.web
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  briar-worker:
+    build: .
+    volumes:
+      - ./workspaces:/app/workspaces
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - PROVIDER=${PROVIDER:-ollama}
+      - OLLAMA_HOST=${OLLAMA_HOST:-host.docker.internal}
+      - OLLAMA_PORT=${OLLAMA_PORT:-11434}
+    command: python -m briar.worker
+    deploy:
+      replicas: 2

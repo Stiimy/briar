@@ -1,18 +1,17 @@
-"""Multi-provider AI backends for Briar 🥀"""
 from .ollama import OllamaProvider
 from .openai import OpenAIProvider
 from .anthropic import AnthropicProvider
 from .deepseek import DeepSeekProvider
 from .groq import GroqProvider
 from .mistral import MistralProvider
+from .xai import XAIProvider
+from .google import GoogleProvider
+from .openrouter import OpenRouterProvider
 
 PROVIDERS = {
-    "ollama": OllamaProvider,
-    "openai": OpenAIProvider,
-    "anthropic": AnthropicProvider,
-    "deepseek": DeepSeekProvider,
-    "groq": GroqProvider,
-    "mistral": MistralProvider,
+    "ollama": OllamaProvider, "openai": OpenAIProvider, "anthropic": AnthropicProvider,
+    "deepseek": DeepSeekProvider, "groq": GroqProvider, "mistral": MistralProvider,
+    "xai": XAIProvider, "google": GoogleProvider, "openrouter": OpenRouterProvider,
 }
 
 def get_provider(name, **kwargs):

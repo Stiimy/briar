@@ -1,7 +1,6 @@
 # 🥀 Briar — Autonomous AI Pentester
 
 > *Find vulnerabilities before hackers do. Free. Open Source. Ollama-powered.*
-[![Version](https://img.shields.io/badge/version-0.1.0-purple)](https://github.com/Stiimy/briar/releases)
 
 [![Python](https://img.shields.io/badge/Python-3.14-blue?logo=python)](https://python.org)
 [![License](https://img.shields.io/badge/License-AGPL--3.0-green)](LICENSE)
@@ -10,7 +9,6 @@
 [![Stars](https://img.shields.io/badge/dynamic/json?color=yellow&label=Stars&query=stargazers_count&url=https://api.github.com/repos/Stiimy/briar)](https://github.com/Stiimy/briar)
 
 Briar is an autonomous, white-box AI pentester. It analyzes source code, identifies attack vectors, and generates professional security reports — powered by **13 AI providers** including free local Ollama.
-[![Version](https://img.shields.io/badge/version-0.1.0-purple)](https://github.com/Stiimy/briar/releases)
 
 ## Quick Start
 

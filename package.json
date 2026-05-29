@@ -1,0 +1,8 @@
+{
+  "name": "briar",
+  "version": "0.1.0",
+  "description": "Autonomous AI Pentester",
+  "bin": { "briar": "./briar.sh" },
+  "repository": "github:Stiimy/briar",
+  "license": "AGPL-3.0"
+}

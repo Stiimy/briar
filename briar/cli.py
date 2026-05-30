@@ -94,6 +94,18 @@ def setup():
 @click.option("--resume", "resume_ws", help="Resume a workspace by name")
 def scan(url, repo, provider, output, config_path, quick, deep, resume_ws):
     """Run a pentest scan"""
+    # Load saved provider from briar setup (if no -p flag given)
+    config_file = os.path.expanduser("~/.briar/config")
+    ctx = click.get_current_context()
+    if ctx.params.get('provider') == 'ollama' and os.path.exists(config_file):
+        with open(config_file) as f:
+            for line in f:
+                if '=' in line:
+                    k, v = line.strip().split('=', 1)
+                    os.environ[k] = v  # Load API keys into environment
+        # Re-check provider from config
+        provider = os.environ.get('PROVIDER', provider)
+
     # Load config file if provided
     if config_path:
         from briar.config import load_config, build_login_flow

@@ -39,6 +39,20 @@ def load_workspace_findings(name):
 
 PROVIDERS = ["ollama","openai","anthropic","deepseek","groq","mistral","xai","google","openrouter","together","custom"]
 
+def get_saved_provider():
+    """Read provider from ~/.briar/config. Returns 'ollama' if not found."""
+    config_file = os.path.expanduser("~/.briar/config")
+    if not os.path.exists(config_file):
+        return None
+    try:
+        with open(config_file) as f:
+            for line in f:
+                if line.startswith("PROVIDER="):
+                    return line.strip().split("=", 1)[1]
+    except:
+        pass
+    return None
+
 @app.get("/", response_class=HTMLResponse)
 async def dashboard():
     scans = load_scans()
@@ -93,7 +107,10 @@ async def dashboard():
         except:
             workspaces_html += f"""<tr><td style="color:#89b4fa">{ws[:30]}</td><td colspan="3" style="color:#6c7086">corrupted</td></tr>"""
 
-    provider_options = "".join(f'<option value="{p}" {"selected" if p=="ollama" else ""}>{p}</option>' for p in PROVIDERS)
+    saved_provider = get_saved_provider()
+    provider_options = "".join(f'<option value="{p}" {"selected" if p==saved_provider else ""}>{p}</option>' for p in PROVIDERS)
+    if not saved_provider:
+        provider_options += '<option value="" disabled selected>Run briar setup first</option>'
 
     return f"""<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -188,7 +205,9 @@ input:focus,select:focus{{border-color:#cc0000}}
 </body></html>"""
 
 @app.get("/scan")
-async def scan(url: str, provider: str = "ollama", mode: str = "standard", background_tasks: BackgroundTasks = None):
+async def scan(url: str, provider: str = None, mode: str = "standard", background_tasks: BackgroundTasks = None):
+    if not provider:
+        provider = get_saved_provider() or "ollama"
     scan_record = {
         "date": datetime.now().strftime("%Y-%m-%d %H:%M"),"target": url,
         "provider": provider,"mode": mode,"status": "running","findings": 0

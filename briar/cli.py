@@ -49,7 +49,7 @@ def check_ollama():
     return None
 
 @click.group(invoke_without_command=True)
-@click.version_option(version="0.3.0")
+@click.version_option(version="0.4.0")
 @click.pass_context
 def cli(ctx):
     """Briar — Autonomous AI Pentester"""

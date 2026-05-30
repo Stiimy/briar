@@ -8,6 +8,22 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 
 console = Console()
 
+def load_saved_config():
+    """Load provider and API keys from ~/.briar/config. Returns dict or None."""
+    config_file = os.path.expanduser("~/.briar/config")
+    if not os.path.exists(config_file):
+        return None
+    config = {}
+    with open(config_file) as f:
+        for line in f:
+            if '=' in line:
+                k, v = line.strip().split('=', 1)
+                config[k] = v
+                if k.endswith('_API_KEY') or k == 'OLLAMA_HOST' or k == 'OLLAMA_PORT' or k == 'OLLAMA_MODEL' or k == 'CUSTOM_ENDPOINT' or k == 'CUSTOM_MODEL':
+                    os.environ[k] = v  # Load into env for providers
+    return config
+
+
 BANNER = """
 [bold red]
   ██████╗ ██████╗ ██╗ █████╗ ██████╗ 
@@ -86,7 +102,7 @@ def setup():
 @cli.command()
 @click.option("-u", "--url", required=False, help="Target URL")
 @click.option("-r", "--repo", help="Source code path")
-@click.option("-p", "--provider", default="ollama", help="AI provider")
+@click.option("-p", "--provider", default=None, help="AI provider (overrides saved config)")
 @click.option("-o", "--output", default="./reports", help="Output dir")
 @click.option("-c", "--config", "config_path", help="YAML config file (auth, rules, target)")
 @click.option("--quick", is_flag=True, help="Quick scan (4 agents)")
@@ -94,17 +110,8 @@ def setup():
 @click.option("--resume", "resume_ws", help="Resume a workspace by name")
 def scan(url, repo, provider, output, config_path, quick, deep, resume_ws):
     """Run a pentest scan"""
-    # Load saved provider from briar setup (if no -p flag given)
-    config_file = os.path.expanduser("~/.briar/config")
-    ctx = click.get_current_context()
-    if ctx.params.get('provider') == 'ollama' and os.path.exists(config_file):
-        with open(config_file) as f:
-            for line in f:
-                if '=' in line:
-                    k, v = line.strip().split('=', 1)
-                    os.environ[k] = v  # Load API keys into environment
-        # Re-check provider from config
-        provider = os.environ.get('PROVIDER', provider)
+    # Load saved config (mandatory if no -p flag)
+    saved = load_saved_config()
 
     # Load config file if provided
     if config_path:
@@ -118,6 +125,27 @@ def scan(url, repo, provider, output, config_path, quick, deep, resume_ws):
         console.print(f"[dim]Config loaded: {len(config.get('rules',{}).get('avoid',[]))} avoid rules, auth={'yes' if auth_flow else 'no'}[/dim]")
     else:
         auth_flow = None
+
+    # Resolve provider: -p flag > YAML config > saved config > ERROR
+    if not provider:
+        if saved:
+            provider = saved.get('PROVIDER', '')
+        if not provider:
+            console.print(Panel.fit(
+                "[bold red]No AI provider configured[/bold red]\n\n"
+                "[dim]Run [cyan]briar setup[/cyan] to choose a provider.\n"
+                "Or use [cyan]-p PROVIDER[/cyan] flag.[/dim]",
+                title="Error"))
+            sys.exit(1)
+
+    # Show what we're using
+    api_key_env = f"{provider.upper()}_API_KEY"
+    has_key = os.environ.get(api_key_env) or (provider == 'ollama')
+    key_status = "[green]key set[/green]" if has_key else "[red]no key[/red]"
+    console.print(f"[dim]Provider: [cyan]{provider}[/cyan] ({key_status})[/dim]")
+
+    if not has_key and provider != 'ollama':
+        console.print(f"[yellow]Warning: {api_key_env} not set. Provider may fail.[/yellow]")
 
     if not url:
         console.print("[red]URL required (-u or config file)[/red]"); sys.exit(1)
@@ -171,15 +199,28 @@ def scan(url, repo, provider, output, config_path, quick, deep, resume_ws):
         task = progress.add_task("[cyan]Scanning...", total=len(agents_to_run))
         from briar.agents import run_agent
 
+        provider_errors = 0
         for agent_name in agents_to_run:
             progress.update(task, description=f"[yellow]{agent_name}...")
             try:
                 result = run_agent(agent_name, provider, url=url, repo_path=repo)
                 if result and "error" not in result:
                     findings.append(result)
-                ws.checkpoint_agent(agent_name, [result] if result and "error" not in result else [])
+                    ws.checkpoint_agent(agent_name, [result])
+                    provider_errors = 0  # Reset on success
+                elif result and "error" in result:
+                    provider_errors += 1
+                    if provider_errors >= 3:
+                        progress.update(task, description=f"[red]Provider failing — aborting[/red]")
+                        console.print(f"[red]Provider '{provider}' returned {provider_errors} errors. Check your API key.[/red]")
+                        break
+                    ws.checkpoint_agent(agent_name, [])
             except Exception as e:
-                findings.append({"type": agent_name, "severity": "Error", "url": url, "analysis": str(e), "agent": agent_name})
+                provider_errors += 1
+                if provider_errors >= 3:
+                    progress.update(task, description=f"[red]Provider failing — aborting[/red]")
+                    console.print(f"[red]Provider '{provider}' crashed {provider_errors} times. Check configuration.[/red]")
+                    break
             progress.advance(task)
 
         # Exploit validation — replay High/Critical findings
@@ -379,6 +420,25 @@ def workspaces(workspace_name):
             except:
                 table.add_row(w_name[:40], "?","?","?")
         console.print(table)
+
+@cli.command()
+def status():
+    """Show current configuration"""
+    saved = load_saved_config()
+    if not saved:
+        console.print("[yellow]No configuration found.[/yellow]")
+        console.print("[dim]Run [cyan]briar setup[/cyan] to configure.[/dim]")
+        return
+
+    provider = saved.get('PROVIDER', 'unknown')
+    details = '\n'.join(f'  [dim]{k}: {v[:30]}[/dim]' for k,v in saved.items() if k != 'PROVIDER')
+    console.print(Panel.fit(
+        f"[bold green]Briar Status[/bold green]\n"
+        f"  Provider:  [cyan]{provider}[/cyan]\n\n"
+        f"{details}\n\n"
+        f"[dim]Run [cyan]briar setup[/cyan] to change provider.[/dim]",
+        title="Config"
+    ))
 
 @cli.command()
 def serve():

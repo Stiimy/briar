@@ -137,5 +137,5 @@ class AuthAgent:
         result["real_findings"] = findings
         result["agent"] = self.name
         result["type"] = "Authentication"
-        result["severity"] = "Critical" if any(f["severity"] == "Critical" for f in findings) else ("High" if findings else "Info")
+        result["severity"] = "Critical" if any(f.get("severity","") == "Critical" for f in findings) else ("High" if findings else "Info")
         return result

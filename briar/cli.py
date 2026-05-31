@@ -34,7 +34,7 @@ BANNER = """
   ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝[/bold red]
 [cyan]              Autonomous AI Pentester[/cyan]
 [dim]         11 providers · 12 agents · AGPL-3.0[/dim]
-[bold #cc0000]                  v0.4.4[/bold #cc0000]
+[bold #cc0000]                  v0.4.5[/bold #cc0000]
 """
 
 def check_ollama():
@@ -50,7 +50,7 @@ def check_ollama():
     return None
 
 @click.group(invoke_without_command=True)
-@click.version_option(version="0.4.4")
+@click.version_option(version="0.4.5")
 @click.pass_context
 def cli(ctx):
     """Briar — Autonomous AI Pentester"""
@@ -322,6 +322,7 @@ def scan(url, repo, provider, output, config_path, quick, deep, resume_ws):
         from briar.charts.generator import ChartGenerator
         cg = ChartGenerator(findings, f"{output}/charts")
         cg.severity_pie()
+        cg.type_bar()
         cg.agent_bar()
         
         # Reports

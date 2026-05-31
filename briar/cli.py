@@ -34,7 +34,7 @@ BANNER = """
   ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝[/bold red]
 [cyan]              Autonomous AI Pentester[/cyan]
 [dim]         11 providers · 12 agents · AGPL-3.0[/dim]
-[bold #cc0000]                  v0.4.3[/bold #cc0000]
+[bold #cc0000]                  v0.4.4[/bold #cc0000]
 """
 
 def check_ollama():
@@ -50,7 +50,7 @@ def check_ollama():
     return None
 
 @click.group(invoke_without_command=True)
-@click.version_option(version="0.4.3")
+@click.version_option(version="0.4.4")
 @click.pass_context
 def cli(ctx):
     """Briar — Autonomous AI Pentester"""
@@ -217,6 +217,7 @@ def scan(url, repo, provider, output, config_path, quick, deep, resume_ws):
                         break
                     ws.checkpoint_agent(agent_name, [])
             except Exception as e:
+                console.print(f"[red]  ⚡ {agent_name}: {e}[/red]")
                 provider_errors += 1
                 if provider_errors >= 3:
                     progress.update(task, description=f"[red]Provider failing — aborting[/red]")

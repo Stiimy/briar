@@ -22,7 +22,7 @@ class AuthZAgent:
             ids.add(int(match.group(1)))
         return list(ids)
 
-    def scan(self, url: str, **kwargs) -> dict:
+    def scan(self, url: str, tech_context: str = "", **kwargs) -> dict:
         """Scan for authorization vulnerabilities (IDOR testing)"""
         findings = []
 
@@ -87,7 +87,7 @@ class AuthZAgent:
                     analysis += f"- {f.get('type','?')}\n"
             analysis += "\n---\n\nLLM analysis of authz findings:\n"
 
-        result = self.analyzer.analyze_endpoint(url, "GET", analysis)
+        result = self.analyzer.analyze_endpoint(url, "GET", tech_context=tech_context, source_hint= analysis)
         result["real_findings"] = findings
         result["agent"] = self.name
         result["type"] = "Authorization"

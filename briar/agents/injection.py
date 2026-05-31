@@ -26,7 +26,7 @@ class InjectionAgent:
         self.http = HTTPClient(timeout=10)
         self.name = "Injection"
 
-    def scan(self, url: str, params: list = None, forms: list = None, **kwargs) -> dict:
+    def scan(self, url: str, params: list = None, forms: list = None, tech_context: str = "", **kwargs) -> dict:
         """Scan for injection vulnerabilities with real payloads"""
         findings = []
         params = params or INJECTION_PARAMS
@@ -93,7 +93,7 @@ class InjectionAgent:
             for f in findings:
                 analysis += f"- **{f['param']}**: {f['type']} — {f['detection']} (payload: `{f['payload']}`)\n"
             analysis += "\n---\n\nLLM analysis of real findings:\n"
-            llm_result = self.analyzer.analyze_endpoint(url, "GET/POST", analysis)
+            self.analyzer.analyze_endpoint(url, "GET/POST", analysis, tech_context=tech_context)
             llm_result["real_findings"] = findings
             llm_result["agent"] = self.name
             llm_result["type"] = "Injection"
@@ -101,7 +101,7 @@ class InjectionAgent:
             return llm_result
         else:
             analysis += "No injection vulnerabilities detected with automated payloads.\n\nLLM analysis:\n"
-            result = self.analyzer.analyze_endpoint(url, "GET/POST", analysis)
+            result = self.analyzer.analyze_endpoint(url, "GET/POST", analysis, tech_context=tech_context)
             result["real_findings"] = findings
             result["agent"] = self.name
             result["type"] = "Injection"

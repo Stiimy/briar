@@ -36,7 +36,7 @@ class RCEAgent:
         self.http = HTTPClient(timeout=10)
         self.name = "RCE"
 
-    def scan(self, url: str, **kwargs) -> dict:
+    def scan(self, url: str, tech_context: str = "", **kwargs) -> dict:
         """Scan for RCE vulnerabilities (command injection + SSTI)"""
         findings = []
         rce_params = RCE_PARAMS
@@ -102,7 +102,7 @@ class RCEAgent:
                 analysis += f"- **{f['type']}**: param `{f['param']}` — {f.get('detected','')} (payload: `{f['payload']}`)\n"
             analysis += "\n---\n\nLLM analysis of real RCE findings:\n"
 
-        result = self.analyzer.analyze_endpoint(url, "GET/POST", analysis)
+        result = self.analyzer.analyze_endpoint(url, "GET/POST", tech_context=tech_context, source_hint= analysis)
         result["real_findings"] = findings
         result["agent"] = self.name
         result["type"] = "RCE"

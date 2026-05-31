@@ -22,7 +22,7 @@ class XSSAgent:
         self.http = HTTPClient(timeout=10)
         self.name = "XSS"
 
-    def scan(self, url: str, inputs: list = None, **kwargs) -> dict:
+    def scan(self, url: str, inputs: list = None, tech_context: str = "", **kwargs) -> dict:
         """Scan for XSS with real payload injection and reflection detection"""
         findings = []
         params = inputs or XSS_PARAMS
@@ -82,12 +82,12 @@ class XSSAgent:
             for f in findings:
                 analysis += f"- **{f['param']}**: {f['type']} — payload `{f['payload']}` reflected\n"
             analysis += "\n---\n\nLLM analysis of real XSS findings:\n"
-            llm_result = self.analyzer.analyze_endpoint(url, "GET", analysis)
+            llm_result = self.analyzer.analyze_endpoint(url, "GET", analysis, tech_context=tech_context)
             llm_result["real_findings"] = findings
             llm_result["payloads_tested"] = [p[0] for p in self.XSS_PAYLOADS[:4]]
         else:
             analysis += "No reflected XSS detected. Payloads tested but not reflected unescaped.\n\nLLM analysis:\n"
-            llm_result = self.analyzer.analyze_endpoint(url, "GET", analysis)
+            llm_result = self.analyzer.analyze_endpoint(url, "GET", analysis, tech_context=tech_context)
             llm_result["real_findings"] = findings
             llm_result["payloads_tested"] = [p[0] for p in self.XSS_PAYLOADS[:4]]
 

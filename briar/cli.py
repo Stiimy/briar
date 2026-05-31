@@ -34,7 +34,7 @@ BANNER = """
   ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝[/bold red]
 [cyan]              Autonomous AI Pentester[/cyan]
 [dim]         11 providers · 12 agents · AGPL-3.0[/dim]
-[bold #cc0000]                  v0.4.6[/bold #cc0000]
+[bold #cc0000]                  v0.4.7[/bold #cc0000]
 """
 
 def check_ollama():
@@ -50,7 +50,7 @@ def check_ollama():
     return None
 
 @click.group(invoke_without_command=True)
-@click.version_option(version="0.4.6")
+@click.version_option(version="0.4.7")
 @click.pass_context
 def cli(ctx):
     """Briar — Autonomous AI Pentester"""
@@ -203,14 +203,8 @@ def scan(url, repo, provider, output, config_path, quick, deep, resume_ws):
         from briar.agents import run_agent
 
         provider_errors = 0
-        agent_times = {}
         for idx, agent_name in enumerate(agents_to_run):
-            agent_start = time.time()
-            elapsed = int(time.time() - scan_start)
-            remaining = max(0, len(agents_to_run) - idx)
-            avg_time = elapsed / max(1, idx)
-            eta = int(remaining * avg_time)
-            progress.update(task, description=f"[yellow]{agent_name}...[/yellow] [dim]({elapsed}s elapsed, ~{eta}s left)[/dim]")
+            progress.update(task, description=f"[{idx+1}/{len(agents_to_run)}] [yellow]{agent_name}...[/yellow]")
             try:
                 result = run_agent(agent_name, provider, url=url, repo_path=repo)
                 if result and "error" not in result:

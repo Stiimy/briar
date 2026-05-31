@@ -45,7 +45,7 @@ class ChartGenerator:
         legend_labels = [f"{l} ({v})" for l, v in zip(labels, values)]
         legend = ax.legend(wedges, legend_labels, loc="center left",
                            bbox_to_anchor=(1, 0.5), frameon=False,
-                           prop={'color': FG, 'size': 11})
+                           prop={'size': 11}, labelcolor=FG)
         ax.set_title("Severity Distribution", color=FG, fontsize=16, fontweight='bold', pad=20)
 
         path = os.path.join(self.output_dir, "severity_donut.png")

@@ -2,6 +2,7 @@
 import re
 from briar.agents.analyzer import SecurityAnalyzer
 from briar.core.http import HTTPClient
+from briar.core.params import RCE_CMD as RCE_PARAMS
 
 class RCEAgent:
     """Discovers Remote Code Execution vulnerabilities with real payloads"""
@@ -38,9 +39,9 @@ class RCEAgent:
     def scan(self, url: str, **kwargs) -> dict:
         """Scan for RCE vulnerabilities (command injection + SSTI)"""
         findings = []
-        rce_params = ["cmd", "exec", "command", "run", "ip", "host", "ping", "name", "q", "search"]
+        rce_params = RCE_PARAMS
 
-        for param in rce_params[:5]:
+        for param in rce_params[:10]:
             # Command injection
             for payload, cmd_type in self.CMD_PAYLOADS:
                 try:

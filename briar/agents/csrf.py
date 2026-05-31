@@ -72,5 +72,5 @@ class CSRFAgent:
         result["real_findings"] = findings
         result["agent"] = self.name
         result["type"] = "CSRF"
-        result["severity"] = "High" if any(f["severity"] == "High" for f in findings) else ("Medium" if findings else "Info")
+        result["severity"] = "High" if any(f.get("severity","") == "High" for f in findings) else ("Medium" if findings else "Info")
         return result

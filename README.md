@@ -55,23 +55,6 @@ Against a file server on port 666 (ransomware-like deployment):
 
 ---
 
-## Briar vs Shannon
-
-| Feature | Briar | Shannon |
-|---------|:-----:|:-------:|
-| AI Providers | **11** (Ollama free) | 1 (Claude paid) |
-| OWASP Categories | **10** | 5 |
-| Blackbox (no source) | ✅ | ❌ Whitebox only |
-| Port Scanning | ✅ | ❌ |
-| Docker Required | ❌ Native Python | ✅ |
-| Dashboard | ✅ Free | 💰 Pro only |
-| Obsidian LLM-Wiki | ✅ | ❌ |
-| Config YAML | ✅ | ✅ |
-| Auth Support | Form login | 2FA/SSO/Magic links |
-| Benchmark | Not yet | 96% XBOW |
-
----
-
 ## Quick Start
 
 ```bash

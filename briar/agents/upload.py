@@ -20,7 +20,7 @@ class UploadAgent:
         self.http = HTTPClient(timeout=10)
         self.name = "FileUpload"
 
-    def scan(self, url: str, **kwargs) -> dict:
+    def scan(self, url: str, tech_context: str = "", **kwargs) -> dict:
         """Scan for file upload vulnerabilities"""
         findings = []
         upload_forms = []
@@ -77,7 +77,7 @@ class UploadAgent:
         else:
             analysis += "No dangerous file uploads detected.\n\nLLM analysis:\n"
 
-        result = self.analyzer.analyze_endpoint(url, "POST", analysis)
+        result = self.analyzer.analyze_endpoint(url, "POST", tech_context=tech_context, source_hint= analysis)
         result["real_findings"] = findings
         result["agent"] = self.name
         result["type"] = "File Upload"

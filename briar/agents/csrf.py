@@ -10,7 +10,7 @@ class CSRFAgent:
         self.http = HTTPClient(timeout=10)
         self.name = "CSRF"
 
-    def scan(self, url: str, **kwargs) -> dict:
+    def scan(self, url: str, tech_context: str = "", **kwargs) -> dict:
         """Scan for CSRF vulnerabilities by analyzing forms"""
         findings = []
 
@@ -68,7 +68,7 @@ class CSRFAgent:
             analysis += "No CSRF vulnerabilities detected.\n"
 
         analysis += "\n---\n\nLLM analysis:\n"
-        result = self.analyzer.analyze_endpoint(url, "POST", analysis)
+        result = self.analyzer.analyze_endpoint(url, "POST", tech_context=tech_context, source_hint= analysis)
         result["real_findings"] = findings
         result["agent"] = self.name
         result["type"] = "CSRF"

@@ -86,11 +86,11 @@ class SSRFAgent:
             for f in findings:
                 analysis += f"- **{f['param']}**: {f['type']} via `{f['payload']}` — {f.get('marker_desc', f.get('ssrf_type', ''))}\n"
             analysis += "\n---\n\nLLM analysis of real SSRF findings:\n"
-            llm_result = self.analyzer.analyze_endpoint(url, "GET", analysis)
+            llm_result = self.analyzer.analyze_endpoint(url, "GET", tech_context=tech_context, source_hint= analysis)
             llm_result["real_findings"] = findings
         else:
             analysis += "No SSRF vulnerabilities detected with automated payloads.\n\nLLM analysis:\n"
-            llm_result = self.analyzer.analyze_endpoint(url, "GET", analysis)
+            llm_result = self.analyzer.analyze_endpoint(url, "GET", tech_context=tech_context, source_hint= analysis)
             llm_result["real_findings"] = findings
 
         llm_result["agent"] = self.name

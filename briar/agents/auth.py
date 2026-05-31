@@ -133,7 +133,7 @@ class AuthAgent:
                     analysis += f"- **{f['type']}**: {f.get('detail', f.get('content',''))}\n"
             analysis += "\n---\n\nLLM analysis of auth findings:\n"
 
-        result = self.analyzer.analyze_endpoint(url, "GET/POST", analysis)
+        result = self.analyzer.analyze_endpoint(url, "GET/POST", tech_context=tech_context, source_hint= analysis)
         result["real_findings"] = findings
         result["agent"] = self.name
         result["type"] = "Authentication"

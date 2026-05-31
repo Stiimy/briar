@@ -29,7 +29,7 @@ class APIAgent:
         self.http = HTTPClient(timeout=10)
         self.name = "API"
 
-    def scan(self, url: str, **kwargs) -> dict:
+    def scan(self, url: str, tech_context: str = "", **kwargs) -> dict:
         """Detect API endpoints and test security"""
         findings = []
         discovered = []
@@ -85,7 +85,7 @@ class APIAgent:
                 analysis += f"- **{f['type']}**: {f.get('endpoint','?')} — {f.get('detail','')}\n"
             analysis += "\n---\n\nLLM analysis of real API findings:\n"
 
-        result = self.analyzer.analyze_endpoint(url, "GET", analysis)
+        result = self.analyzer.analyze_endpoint(url, "GET", tech_context=tech_context, source_hint= analysis)
         result["real_findings"] = findings
         result["discovered_endpoints"] = [d["path"] for d in discovered]
         result["agent"] = self.name

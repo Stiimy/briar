@@ -34,7 +34,7 @@ BANNER = """
   ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝[/bold red]
 [cyan]              Autonomous AI Pentester[/cyan]
 [dim]         11 providers · 12 agents · AGPL-3.0[/dim]
-[bold #cc0000]                  v0.4.8[/bold #cc0000]
+[bold #cc0000]                  v0.4.9[/bold #cc0000]
 """
 
 def check_ollama():
@@ -50,7 +50,7 @@ def check_ollama():
     return None
 
 @click.group(invoke_without_command=True)
-@click.version_option(version="0.4.8")
+@click.version_option(version="0.4.9")
 @click.pass_context
 def cli(ctx):
     """Briar — Autonomous AI Pentester"""
@@ -203,10 +203,11 @@ def scan(url, repo, provider, output, config_path, quick, deep, resume_ws):
         from briar.agents import run_agent
 
         provider_errors = 0
+        recon_data = None
         for idx, agent_name in enumerate(agents_to_run):
             progress.update(task, description=f"[{idx+1}/{len(agents_to_run)}] [yellow]{agent_name}...[/yellow]")
             try:
-                result = run_agent(agent_name, provider, url=url, repo_path=repo)
+                result = run_agent(agent_name, provider, url=url, repo_path=repo, recon_data=recon_data)
                 if result and "error" not in result:
                     findings.append(result)
                     ws.checkpoint_agent(agent_name, [result])
@@ -218,6 +219,9 @@ def scan(url, repo, provider, output, config_path, quick, deep, resume_ws):
                         console.print(f"[red]Provider '{provider}' returned {provider_errors} errors. Check your API key.[/red]")
                         break
                     ws.checkpoint_agent(agent_name, [])
+                # Store recon findings for subsequent agents
+                if agent_name == "recon" and result:
+                    recon_data = result
             except Exception as e:
                 console.print(f"[red]  ⚡ {agent_name}: {e}[/red]")
                 provider_errors += 1

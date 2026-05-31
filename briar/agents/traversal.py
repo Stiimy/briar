@@ -37,7 +37,7 @@ class TraversalAgent:
         self.http = HTTPClient(timeout=10)
         self.name = "PathTraversal"
 
-    def scan(self, url: str, **kwargs) -> dict:
+    def scan(self, url: str, tech_context: str = "", **kwargs) -> dict:
         """Scan for path traversal with real payloads"""
         findings = []
         traversal_params = TRAVERSAL_PARAMS
@@ -79,11 +79,11 @@ class TraversalAgent:
             for f in findings:
                 analysis += f"- **{f['param']}**: {f['type']} — read `{f['file_read']}` via `{f['payload']}`\n"
             analysis += "\n---\n\nLLM analysis of real traversal findings:\n"
-            llm_result = self.analyzer.analyze_endpoint(url, "GET", analysis)
+            llm_result = self.analyzer.analyze_endpoint(url, "GET", tech_context=tech_context, source_hint= analysis)
             llm_result["real_findings"] = findings
         else:
             analysis += "No path traversal vulnerabilities detected with automated payloads.\n\nLLM analysis:\n"
-            llm_result = self.analyzer.analyze_endpoint(url, "GET", analysis)
+            llm_result = self.analyzer.analyze_endpoint(url, "GET", tech_context=tech_context, source_hint= analysis)
             llm_result["real_findings"] = findings
 
         llm_result["agent"] = self.name

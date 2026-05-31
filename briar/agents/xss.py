@@ -1,6 +1,7 @@
 """XSS Attack Agent — Reflected, Stored, DOM ❌"""
 from briar.agents.analyzer import SecurityAnalyzer
 from briar.core.http import HTTPClient
+from briar.core.params import XSS as XSS_PARAMS
 
 class XSSAgent:
     """Discovers Cross-Site Scripting with real payload injection"""
@@ -24,9 +25,9 @@ class XSSAgent:
     def scan(self, url: str, inputs: list = None, **kwargs) -> dict:
         """Scan for XSS with real payload injection and reflection detection"""
         findings = []
-        params = inputs or ["q", "search", "query", "id", "name", "message", "comment", "url"]
+        params = inputs or XSS_PARAMS
 
-        for param in params[:6]:
+        for param in params[:10]:
             for payload, xss_type in self.XSS_PAYLOADS:
                 try:
                     result = self.http.send_payload(url, param, payload)

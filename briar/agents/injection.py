@@ -1,6 +1,7 @@
 """Injection Attack Agent — SQL, NoSQL, Command, SSTI 💉"""
 from briar.agents.analyzer import SecurityAnalyzer
 from briar.core.http import HTTPClient
+from briar.core.params import INJECTION as INJECTION_PARAMS
 
 class InjectionAgent:
     """Discovers injection vulnerabilities with real payloads"""
@@ -28,7 +29,7 @@ class InjectionAgent:
     def scan(self, url: str, params: list = None, forms: list = None, **kwargs) -> dict:
         """Scan for injection vulnerabilities with real payloads"""
         findings = []
-        params = params or ["q", "id", "page", "search", "query", "user", "email"]
+        params = params or INJECTION_PARAMS
 
         # Get baseline
         try:
@@ -39,7 +40,7 @@ class InjectionAgent:
             baseline_len = 0
             baseline_time = 0.5
 
-        for param in params[:6]:
+        for param in params[:12]:
             for payload, vuln_type in self.SQL_PAYLOADS:
                 try:
                     result = self.http.send_payload(url, param, payload)

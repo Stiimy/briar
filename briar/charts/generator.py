@@ -1,16 +1,15 @@
-"""Briar Chart Generator — clean, readable security charts 📊"""
+"""Briar Chart Generator — clean, professional security charts 📊"""
 import os
 import matplotlib
 matplotlib.use('Agg')
 
-# Briar dark theme
 BG = "#0d0d1a"
 FG = "#cdd6f4"
 RED = "#cc0000"
 ORANGE = "#ff6600"
 YELLOW = "#ffcc00"
 GREEN = "#00cc44"
-GREY = "#666688"
+GREY = "#555577"
 VIOLET = "#B847F0"
 
 SEV_COLORS = {"Critical": RED, "High": ORANGE, "Medium": YELLOW, "Low": GREEN, "Info": GREY, "Error": GREY}
@@ -21,41 +20,102 @@ class ChartGenerator:
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
 
-    def severity_pie(self) -> str:
-        """Camembert de sévérité — only if at least 2 different severities."""
+    def severity_donut(self) -> str:
+        """Donut chart — severity distribution with count labels."""
         import matplotlib.pyplot as plt
         severities = {}
         for f in self.findings:
             s = f.get("severity", "Info")
             severities[s] = severities.get(s, 0) + 1
 
-        # Skip pie if all findings are the same severity
         if len(severities) < 2:
-            return "⚠️ All findings same severity — pie chart skipped"
+            return "⚠️ All findings same severity — donut skipped"
 
-        labels = list(severities.keys())
-        values = list(severities.values())
+        order = ["Critical", "High", "Medium", "Low", "Info", "Error"]
+        labels = [k for k in order if k in severities]
+        values = [severities[k] for k in labels]
         colors = [SEV_COLORS.get(k, GREY) for k in labels]
 
-        fig, ax = plt.subplots(figsize=(7, 7), facecolor=BG)
+        fig, ax = plt.subplots(figsize=(8, 6), facecolor=BG)
         ax.set_facecolor(BG)
-        wedges, texts, autotexts = ax.pie(
-            values, labels=labels, colors=colors,
-            autopct='%1.0f%%', startangle=90,
-            textprops={'color': FG, 'fontsize': 11}
-        )
-        for at in autotexts:
-            at.set_fontsize(13)
-            at.set_fontweight('bold')
-        ax.set_title("Findings by Severity", color=FG, fontsize=14, fontweight='bold', pad=20)
+        wedges, texts = ax.pie(values, labels=None, colors=colors,
+                                startangle=90, wedgeprops=dict(width=0.4, edgecolor=BG, linewidth=2))
 
-        path = os.path.join(self.output_dir, "severity_pie.png")
+        # Legend with counts
+        legend_labels = [f"{l} ({v})" for l, v in zip(labels, values)]
+        legend = ax.legend(wedges, legend_labels, loc="center left",
+                           bbox_to_anchor=(1, 0.5), frameon=False,
+                           prop={'color': FG, 'size': 11})
+        ax.set_title("Severity Distribution", color=FG, fontsize=16, fontweight='bold', pad=20)
+
+        path = os.path.join(self.output_dir, "severity_donut.png")
+        plt.savefig(path, dpi=150, bbox_inches='tight', facecolor=BG)
+        plt.close()
+        return path
+
+    def severity_pie(self) -> str:
+        """Legacy — delegates to donut."""
+        return self.severity_donut()
+
+    def endpoint_heatmap(self) -> str:
+        """Heatmap: severity × endpoint. Shows where the pain is."""
+        import matplotlib.pyplot as plt
+        import numpy as np
+
+        # Gather data
+        endpoints = {}
+        sev_order = ["Critical", "High", "Medium", "Low", "Info"]
+        for f in self.findings:
+            url = f.get("url", "?")
+            short = url.replace("https://", "").replace("http://", "")[:35]
+            sev = f.get("severity", "Info")
+            if short not in endpoints:
+                endpoints[short] = {s: 0 for s in sev_order}
+            if sev in sev_order:
+                endpoints[short][sev] += 1
+
+        if len(endpoints) < 2:
+            return "⚠️ Single endpoint — heatmap skipped"
+
+        # Build matrix
+        rows = list(endpoints.keys())[:10]
+        data = [[endpoints[r][s] for s in sev_order] for r in rows]
+        data = np.array(data)
+
+        fig, ax = plt.subplots(figsize=(max(8, len(rows)*0.6), max(4, len(rows)*0.4)), facecolor=BG)
+        ax.set_facecolor(BG)
+
+        # Custom colormap: dark bg -> green -> yellow -> red
+        from matplotlib.colors import LinearSegmentedColormap
+        cmap = LinearSegmentedColormap.from_list("briar", [BG, GREEN, YELLOW, RED], N=10)
+
+        im = ax.imshow(data, cmap=cmap, aspect='auto')
+
+        # Labels
+        ax.set_xticks(range(len(sev_order)))
+        ax.set_xticklabels(sev_order, color=FG, fontsize=9)
+        ax.set_yticks(range(len(rows)))
+        ax.set_yticklabels(rows, color=FG, fontsize=9)
+        ax.set_title("Vulnerabilities: Severity × Endpoint", color=FG, fontsize=14, fontweight='bold', pad=15)
+
+        # Annotate cells
+        for i in range(len(rows)):
+            for j in range(len(sev_order)):
+                val = data[i, j]
+                color = "white" if val > 0 and sev_order[j] in ("Critical", "High") else FG
+                ax.text(j, i, str(val) if val > 0 else "", ha='center', va='center',
+                        color=color, fontsize=9, fontweight='bold')
+
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+        path = os.path.join(self.output_dir, "endpoint_heatmap.png")
         plt.savefig(path, dpi=150, bbox_inches='tight', facecolor=BG)
         plt.close()
         return path
 
     def type_bar(self) -> str:
-        """Barres horizontales par type de vulnérabilité."""
+        """Horizontal bar chart — findings by vulnerability type."""
         import matplotlib.pyplot as plt
         types = {}
         for f in self.findings:
@@ -65,12 +125,11 @@ class ChartGenerator:
         if not types:
             return "⚠️ No findings to chart"
 
-        # Get severity for coloring
         type_sev = {}
         for f in self.findings:
             t = f.get("type", "Unknown").replace(" ⚠️", "")
             sev = f.get("severity", "Info")
-            if t not in type_sev or sev == "Critical":
+            if t not in type_sev or sev in ("Critical", "High"):
                 type_sev[t] = sev
 
         sorted_types = sorted(types.items(), key=lambda x: x[1], reverse=True)
@@ -78,14 +137,13 @@ class ChartGenerator:
         values = [t[1] for t in sorted_types]
         colors = [SEV_COLORS.get(type_sev.get(l, "Info"), GREY) for l in labels]
 
-        fig, ax = plt.subplots(figsize=(10, max(4, len(labels) * 0.5)), facecolor=BG)
+        fig, ax = plt.subplots(figsize=(10, max(4, len(labels)*0.5)), facecolor=BG)
         ax.set_facecolor(BG)
-        bars = ax.barh(labels, values, color=colors, height=0.6)
+        bars = ax.barh(labels, values, color=colors, height=0.6, edgecolor=BG, linewidth=1)
         ax.invert_yaxis()
 
-        # Add count labels
         for bar, val in zip(bars, values):
-            ax.text(bar.get_width() + 0.1, bar.get_y() + bar.get_height()/2,
+            ax.text(bar.get_width() + 0.15, bar.get_y() + bar.get_height()/2,
                     str(val), va='center', color=FG, fontsize=10, fontweight='bold')
 
         ax.set_xlabel("Count", color=FG, fontsize=10)
@@ -101,7 +159,7 @@ class ChartGenerator:
         return path
 
     def agent_bar(self) -> str:
-        """Barres horizontales par agent."""
+        """Horizontal bar chart — findings by agent."""
         import matplotlib.pyplot as plt
         agents = {}
         for f in self.findings:
@@ -115,13 +173,13 @@ class ChartGenerator:
         labels = [a[0] for a in sorted_agents]
         values = [a[1] for a in sorted_agents]
 
-        fig, ax = plt.subplots(figsize=(8, max(3, len(labels) * 0.4)), facecolor=BG)
+        fig, ax = plt.subplots(figsize=(8, max(3, len(labels)*0.4)), facecolor=BG)
         ax.set_facecolor(BG)
-        bars = ax.barh(labels, values, color=VIOLET, height=0.5)
+        bars = ax.barh(labels, values, color=VIOLET, height=0.5, edgecolor=BG, linewidth=1)
         ax.invert_yaxis()
 
         for bar, val in zip(bars, values):
-            ax.text(bar.get_width() + 0.1, bar.get_y() + bar.get_height()/2,
+            ax.text(bar.get_width() + 0.15, bar.get_y() + bar.get_height()/2,
                     str(val), va='center', color=FG, fontsize=10, fontweight='bold')
 
         ax.set_xlabel("Count", color=FG, fontsize=10)

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "briar-pentest"
-version = "0.4.13"
+version = "0.4.14"
 description = "Autonomous AI Pentester — find vulnerabilities before hackers do"
 readme = "README.md"
 license = {text = "AGPL-3.0"}

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Scan {{ scan_id }} - Briar</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1><a href="/" style="color:var(--red)">Briar</a> / Scan {{ scan_id }}</h1>
+    <p class="sub">{{ total }} findings</p>
+  </div>
+  <a href="/" class="btn btn-sm">Back</a>
+</div>
+
+<div class="container">
+  <div class="stats">
+    <div class="stat"><div class="n">{{ total }}</div><div class="l">Total</div></div>
+    <div class="stat"><div class="n" style="color:var(--crit)">{{ critical }}</div><div class="l">Critical</div></div>
+    <div class="stat"><div class="n" style="color:var(--high)">{{ high }}</div><div class="l">High</div></div>
+    <div class="stat"><div class="n" style="color:var(--med)">{{ medium }}</div><div class="l">Medium</div></div>
+    <div class="stat"><div class="n" style="color:var(--low)">{{ low }}</div><div class="l">Low</div></div>
+    <div class="stat"><div class="n" style="color:var(--ok)">{{ confirmed }}</div><div class="l">Confirmed</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Findings</h2>
+    {% if findings %}
+    {% for f in findings %}
+    <div class="finding-row" onclick="this.nextElementSibling.classList.toggle('open')">
+      <span class="sev-dot" style="background:{{ sev_color.get(f.get('severity','Info'),'#666') }}"></span>
+      <span class="badge {{ sev_class.get(f.get('severity','Info'),'b-info') }}">{{ f.get('severity','?') }}</span>
+      <span style="flex:1">{{ f.get('type','?') }}</span>
+      <span style="color:var(--muted);font-size:11px">{{ f.get('agent','?') }}</span>
+      <span style="color:var(--muted)">&#9662;</span>
+    </div>
+    <div class="finding-detail">
+      <p><strong>Endpoint:</strong> <code>{{ f.get('url','?') }}</code></p>
+      {% if f.get('param') %}<p><strong>Param:</strong> <code>{{ f.param }}</code></p>{% endif %}
+      {% if f.get('payload') %}<p><strong>Payload:</strong> <code>{{ f.payload }}</code></p>{% endif %}
+      {% if f.get('poc') %}<p><strong>PoC:</strong></p><pre>{{ f.poc }}</pre>{% endif %}
+      {% if f.get('confirmed') %}<p><span class="badge b-ok">Confirmed</span></p>{% else %}<p><span class="badge b-low">Unconfirmed</span></p>{% endif %}
+      <hr style="border-color:var(--border);margin:12px 0">
+      <div style="max-height:300px;overflow-y:auto">{{ f.get('analysis', f.get('raw','No details')) }}</div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty"><h3>No findings</h3><p>This scan produced no results.</p></div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.finding-detail').forEach(el => {
+  el.addEventListener('click', e => e.stopPropagation());
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.finding-detail.open').forEach(el => el.classList.remove('open'));
+  }
+});
+</script>
+</body>
+</html>

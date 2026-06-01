@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Briar Dashboard</title>
+<link rel="stylesheet" href="/static/style.css">
+<meta http-equiv="refresh" content="15">
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>Briar Dashboard</h1>
+    <p class="sub">Autonomous AI Pentester v0.4.14</p>
+  </div>
+</div>
+
+<div class="container">
+  <div class="stats">
+    <div class="stat"><div class="n">{{ total_scans }}</div><div class="l">Scans</div></div>
+    <div class="stat"><div class="n">{{ total_findings }}</div><div class="l">Findings</div></div>
+    <div class="stat"><div class="n">12</div><div class="l">Agents</div></div>
+    <div class="stat"><div class="n">11</div><div class="l">Providers</div></div>
+  </div>
+
+  <div class="card">
+    <h2>New Scan</h2>
+    <form action="/scan" method="get">
+      <input type="url" name="url" placeholder="https://target.com" required style="flex:1;min-width:200px">
+      <select name="provider">
+        <option value="ollama" {% if saved_provider == 'ollama' %}selected{% endif %}>Ollama (free)</option>
+        <option value="deepseek" {% if saved_provider == 'deepseek' %}selected{% endif %}>DeepSeek</option>
+        <option value="openai" {% if saved_provider == 'openai' %}selected{% endif %}>OpenAI</option>
+        <option value="anthropic" {% if saved_provider == 'anthropic' %}selected{% endif %}>Claude</option>
+        <option value="groq" {% if saved_provider == 'groq' %}selected{% endif %}>Groq</option>
+        <option value="mistral" {% if saved_provider == 'mistral' %}selected{% endif %}>Mistral</option>
+        <option value="xai" {% if saved_provider == 'xai' %}selected{% endif %}>xAI / Grok</option>
+        <option value="google" {% if saved_provider == 'google' %}selected{% endif %}>Gemini</option>
+        <option value="openrouter" {% if saved_provider == 'openrouter' %}selected{% endif %}>OpenRouter</option>
+        <option value="together" {% if saved_provider == 'together' %}selected{% endif %}>Together</option>
+        <option value="custom" {% if saved_provider == 'custom' %}selected{% endif %}>Custom</option>
+      </select>
+      <select name="mode">
+        <option value="quick">Quick (4)</option>
+        <option value="standard" selected>Standard (8)</option>
+        <option value="deep">Deep (12)</option>
+      </select>
+      <button type="submit" class="btn">Launch</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Recent Scans</h2>
+    {% if scans %}
+    <table>
+      <tr><th>Date</th><th>Target</th><th>Findings</th><th>Max Sev</th><th>Status</th><th></th></tr>
+      {% for s in scans %}
+      <tr>
+        <td style="color:var(--muted)">{{ s.date }}</td>
+        <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.target }}</td>
+        <td>{{ s.findings }}</td>
+        <td>--</td>
+        <td>
+          {% if s.status == 'done' %}
+          <span class="badge b-info">Done</span>
+          {% elif s.status == 'running' %}
+          <span class="badge b-high"><span class="live-dot"></span>Running</span>
+          {% else %}
+          <span class="badge b-low">{{ s.status }}</span>
+          {% endif %}
+        </td>
+        <td><a href="/scan/{{ s.get('scan_id', s.get('date','')) }}" class="btn btn-sm btn-green">View</a></td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <div class="empty"><h3>No scans yet</h3><p>Launch your first scan above.</p></div>
+    {% endif %}
+  </div>
+</div>
+</body>
+</html>

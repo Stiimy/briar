@@ -98,20 +98,22 @@ def get_saved_provider():
 PROVIDERS = ["ollama","openai","anthropic","deepseek","groq","mistral","xai","google","openrouter","together","custom"]
 
 def find_workspace(scan_id: str) -> str:
-    """Find workspace by scan_id or target URL."""
+    """Find workspace by stored ws_name or target URL."""
     scans = load_scans()
-    target_url = None
     for s in scans:
         if s.get("scan_id") == scan_id:
+            # First try stored workspace name
+            ws_stored = s.get("workspace")
+            if ws_stored and os.path.isdir(os.path.join(WORKSPACES_DIR, ws_stored)):
+                return ws_stored
+            # Fallback: search by target URL
             target_url = s.get("target", "")
+            workspaces = sorted([d for d in os.listdir(WORKSPACES_DIR) if os.path.isdir(os.path.join(WORKSPACES_DIR, d))], reverse=True)
+            safe = target_url.replace("://", "_").replace("/", "_").replace(":", "_")[:50]
+            for ws in workspaces:
+                if safe in ws:
+                    return ws
             break
-    if not target_url:
-        return None
-    workspaces = sorted([d for d in os.listdir(WORKSPACES_DIR) if os.path.isdir(os.path.join(WORKSPACES_DIR, d))], reverse=True)
-    safe = target_url.replace("://", "_").replace("/", "_").replace(":", "_")[:50]
-    for ws in workspaces:
-        if safe in ws:
-            return ws
     return None
 
 def find_workspace_latest(target_url: str) -> str:
@@ -315,6 +317,14 @@ async def scan_live(scan_id: str):
     findings_count = state.get("findings_count", 0)
     target = state.get("target", "?")
 
+    # Fallback target from scan record
+    if target == "?":
+        scans = load_scans()
+        for s in scans:
+            if s.get("scan_id") == scan_id:
+                target = s.get("target", "?")
+                break
+
     # Check if still running
     scans = load_scans()
     is_running = False
@@ -415,8 +425,11 @@ async def launch_scan(url: str, provider: str = None, mode: str = "standard", ba
     if not provider:
         provider = get_saved_provider()
     scan_id = datetime.now().strftime("%Y%m%d%H%M%S")
+    from briar.core.workspace import Workspace
+    ws = Workspace(url, mode)
     scan_record = {"scan_id": scan_id, "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                   "target": url, "provider": provider, "mode": mode, "status": "running", "findings": 0}
+                   "target": url, "provider": provider, "mode": mode, "status": "running",
+                   "findings": 0, "workspace": ws.name}
     scans = load_scans()
     scans.append(scan_record)
     os.makedirs(os.path.dirname(SCANS_FILE), exist_ok=True)
@@ -427,16 +440,29 @@ async def launch_scan(url: str, provider: str = None, mode: str = "standard", ba
         all_agents = ["recon","injection","xss","ssrf","auth","authz","csrf","upload","traversal","rce","api","secrets"]
         agent_count = 12 if mode == "deep" else 4 if mode == "quick" else 8
         agents = all_agents[:agent_count]
-        findings_count = 0
+        findings = []
         for agent_name in agents:
             try:
                 result = run_agent(agent_name, provider, url=url)
-                if result and "error" not in result: findings_count += 1
+                if result and "error" not in result:
+                    findings.append(result)
+                ws.checkpoint_agent(agent_name, [result] if result and "error" not in result else [])
             except: pass
+
+        # Generate reports
+        try:
+            from briar.reports.generator import ReportGenerator
+            from briar.reports.obsidian import ObsidianGenerator
+            from briar.reports.html_report import HTMLReportGenerator
+            ReportGenerator(url, findings, "./reports").all_formats()
+            ObsidianGenerator(url, findings, "./reports/obsidian").generate()
+            HTMLReportGenerator(url, findings, "./reports").generate()
+        except: pass
+
         scans = load_scans()
         for s in scans:
             if s.get("scan_id") == scan_id:
-                s["status"] = "done"; s["findings"] = findings_count; break
+                s["status"] = "done"; s["findings"] = len(findings); break
         with open(SCANS_FILE, "w") as f: json.dump(scans, f, indent=2)
 
     if background_tasks: background_tasks.add_task(run_scan)
@@ -444,7 +470,7 @@ async def launch_scan(url: str, provider: str = None, mode: str = "standard", ba
 
 @app.get("/health")
 async def health():
-    return {"status":"ok","version":"0.4.20","scans":len(load_scans())}
+    return {"status":"ok","version":"0.4.21","scans":len(load_scans())}
 
 def main():
     print("Briar Dashboard -> http://localhost:8233")

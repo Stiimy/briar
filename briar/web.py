@@ -7,7 +7,7 @@ import uvicorn, os, json
 from datetime import datetime
 from pathlib import Path
 
-app = FastAPI(title="Briar Dashboard", version="0.4.15")
+app = FastAPI(title="Briar Dashboard", version="0.4.16")
 
 BASE_DIR = Path(__file__).parent
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
@@ -138,7 +138,7 @@ async def launch_scan(url: str, provider: str = None, mode: str = "standard", ba
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": "0.4.15", "scans": len(load_scans())}
+    return {"status": "ok", "version": "0.4.16", "scans": len(load_scans())}
 
 def main():
     print("Briar Dashboard -> http://localhost:8233")

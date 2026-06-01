@@ -4,14 +4,44 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Briar Dashboard</title>
-<link rel="stylesheet" href="/static/style.css">
+<style>
+:root{--bg:#0d0d1a;--card:#13132b;--muted:#6c7086;--fg:#cdd6f4;--accent:#89b4fa;--ok:#a6e3a1;--high:#f38ba8;--border:#252545;--red:#cc0000;--redbg:rgba(204,0,0,.1)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.6;min-height:100vh}
+.header{background:linear-gradient(135deg,#1a0a0a,#13132b);border-bottom:2px solid var(--red);padding:20px 32px;display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:20px;color:var(--red)}.header .sub{color:var(--muted);font-size:12px}
+.container{max-width:1100px;margin:0 auto;padding:24px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:24px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat .n{font-size:26px;font-weight:700}.stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px}
+.card h2{font-size:16px;color:var(--red);margin-bottom:16px}
+.btn{background:var(--redbg);color:var(--red);border:1px solid var(--red);border-radius:6px;padding:8px 18px;font-size:13px;cursor:pointer;text-decoration:none;display:inline-block;font-weight:600;transition:all .2s}
+.btn:hover{background:rgba(204,0,0,.25)}
+.btn-sm{padding:4px 12px;font-size:11px}
+.btn-green{background:rgba(166,227,161,.1);color:var(--ok);border-color:var(--ok)}
+.btn-green:hover{background:rgba(166,227,161,.2)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);font-size:13px}
+th{color:var(--muted);text-transform:uppercase;font-size:11px;letter-spacing:1px;font-weight:600}
+tr:hover{background:rgba(255,255,255,.02)}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;text-transform:uppercase}
+.b-info{background:#182030;color:var(--accent)}.b-high{background:#2a1828;color:var(--high)}.b-low{background:#2a2618;color:#f9e2af}
+form{display:flex;gap:8px;flex-wrap:wrap;align-items:end}
+input,select{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 14px;color:var(--fg);font-size:13px;outline:none;font-family:inherit}
+input:focus,select:focus{border-color:var(--red)}
+.empty{text-align:center;padding:48px;color:var(--muted)}
+.empty h3{font-size:18px;margin-bottom:8px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.live-dot{width:8px;height:8px;background:var(--red);border-radius:50%;display:inline-block;animation:pulse 1.5s infinite;margin-right:6px}
+</style>
 <meta http-equiv="refresh" content="15">
 </head>
 <body>
 <div class="header">
   <div>
     <h1>Briar Dashboard</h1>
-    <p class="sub">Autonomous AI Pentester v0.4.14</p>
+    <p class="sub">Autonomous AI Pentester</p>
   </div>
 </div>
 
@@ -34,7 +64,7 @@
         <option value="anthropic" {% if saved_provider == 'anthropic' %}selected{% endif %}>Claude</option>
         <option value="groq" {% if saved_provider == 'groq' %}selected{% endif %}>Groq</option>
         <option value="mistral" {% if saved_provider == 'mistral' %}selected{% endif %}>Mistral</option>
-        <option value="xai" {% if saved_provider == 'xai' %}selected{% endif %}>xAI / Grok</option>
+        <option value="xai" {% if saved_provider == 'xai' %}selected{% endif %}>xAI</option>
         <option value="google" {% if saved_provider == 'google' %}selected{% endif %}>Gemini</option>
         <option value="openrouter" {% if saved_provider == 'openrouter' %}selected{% endif %}>OpenRouter</option>
         <option value="together" {% if saved_provider == 'together' %}selected{% endif %}>Together</option>
@@ -53,13 +83,12 @@
     <h2>Recent Scans</h2>
     {% if scans %}
     <table>
-      <tr><th>Date</th><th>Target</th><th>Findings</th><th>Max Sev</th><th>Status</th><th></th></tr>
+      <tr><th>Date</th><th>Target</th><th>Findings</th><th>Status</th><th></th></tr>
       {% for s in scans %}
       <tr>
-        <td style="color:var(--muted)">{{ s.date }}</td>
+        <td style="color:var(--muted);font-size:12px">{{ s.date }}</td>
         <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.target }}</td>
         <td>{{ s.findings }}</td>
-        <td>--</td>
         <td>
           {% if s.status == 'done' %}
           <span class="badge b-info">Done</span>

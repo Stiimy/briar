@@ -1,16 +1,14 @@
 """Briar Web Dashboard — FastAPI + Jinja2 + HTMX 🥀"""
 from fastapi import FastAPI, BackgroundTasks, Request, Query
 from fastapi.responses import HTMLResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import uvicorn, os, json
 from datetime import datetime
 from pathlib import Path
 
-app = FastAPI(title="Briar Dashboard", version="0.4.16")
+app = FastAPI(title="Briar Dashboard", version="0.4.17")
 
 BASE_DIR = Path(__file__).parent
-app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 SCANS_FILE = os.path.expanduser("~/.briar/scans.json")
@@ -138,7 +136,7 @@ async def launch_scan(url: str, provider: str = None, mode: str = "standard", ba
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "version": "0.4.16", "scans": len(load_scans())}
+    return {"status": "ok", "version": "0.4.17", "scans": len(load_scans())}
 
 def main():
     print("Briar Dashboard -> http://localhost:8233")

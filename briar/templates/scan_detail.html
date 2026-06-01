@@ -3,8 +3,32 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Scan {{ scan_id }} - Briar</title>
-<link rel="stylesheet" href="/static/style.css">
+<title>Scan - Briar</title>
+<style>
+:root{--bg:#0d0d1a;--card:#13132b;--muted:#6c7086;--fg:#cdd6f4;--accent:#89b4fa;--ok:#a6e3a1;--low:#f9e2af;--med:#fab387;--high:#f38ba8;--crit:#cba6f7;--border:#252545;--red:#cc0000}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.6;min-height:100vh}
+.header{background:linear-gradient(135deg,#1a0a0a,#13132b);border-bottom:2px solid var(--red);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.header h1{font-size:18px;color:var(--red)}.header .sub{color:var(--muted);font-size:12px}
+.container{max-width:1100px;margin:0 auto;padding:20px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:20px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.stat .n{font-size:24px;font-weight:700}.stat .l{font-size:10px;color:var(--muted);text-transform:uppercase;margin-top:2px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px}
+.card h2{font-size:16px;color:var(--red);margin-bottom:16px}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;text-transform:uppercase}
+.b-crit{background:#2a1840;color:var(--crit)}.b-high{background:#2a1828;color:var(--high)}.b-med{background:#2a2018;color:var(--med)}.b-low{background:#2a2618;color:var(--low)}.b-info{background:#182030;color:var(--accent)}.b-ok{background:#182a18;color:var(--ok)}
+.btn{background:rgba(204,0,0,.1);color:var(--red);border:1px solid var(--red);border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;text-decoration:none;display:inline-block;font-weight:600}
+a{color:var(--accent);text-decoration:none}a:hover{color:var(--red)}
+.finding-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;cursor:pointer}
+.finding-row:hover{background:rgba(255,255,255,.01)}
+.finding-detail{display:none;padding:14px;background:rgba(0,0,0,.2);border-radius:8px;margin-top:8px;font-size:12px;max-height:400px;overflow-y:auto;white-space:pre-wrap;line-height:1.5}
+.finding-detail.open{display:block}
+.sev-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
+code{background:#1a1a35;padding:1px 5px;border-radius:3px;font-size:12px}
+pre{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;padding:12px;overflow-x:auto;color:var(--fg);font-size:11px;line-height:1.4;margin:8px 0}
+.empty{text-align:center;padding:48px;color:var(--muted)}
+</style>
 </head>
 <body>
 <div class="header">
@@ -12,7 +36,7 @@
     <h1><a href="/" style="color:var(--red)">Briar</a> / Scan {{ scan_id }}</h1>
     <p class="sub">{{ total }} findings</p>
   </div>
-  <a href="/" class="btn btn-sm">Back</a>
+  <a href="/" class="btn">Back</a>
 </div>
 
 <div class="container">
@@ -42,8 +66,8 @@
       {% if f.get('payload') %}<p><strong>Payload:</strong> <code>{{ f.payload }}</code></p>{% endif %}
       {% if f.get('poc') %}<p><strong>PoC:</strong></p><pre>{{ f.poc }}</pre>{% endif %}
       {% if f.get('confirmed') %}<p><span class="badge b-ok">Confirmed</span></p>{% else %}<p><span class="badge b-low">Unconfirmed</span></p>{% endif %}
-      <hr style="border-color:var(--border);margin:12px 0">
-      <div style="max-height:300px;overflow-y:auto">{{ f.get('analysis', f.get('raw','No details')) }}</div>
+      <hr style="border-color:var(--border);margin:10px 0">
+      <div style="max-height:250px;overflow-y:auto">{{ f.get('analysis', f.get('raw','No details')) }}</div>
     </div>
     {% endfor %}
     {% else %}

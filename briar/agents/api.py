@@ -42,7 +42,7 @@ class APIAgent:
                 if resp.status_code in [200, 301, 302, 401, 403]:
                     text_lower = resp.text[:500].lower()
                     # Only count as API if response contains API markers
-                    api_markers = ["swagger", "openapi", ""paths"", "__schema", "graphql",
+                    api_markers = ["swagger", "openapi", '"paths"', "__schema", "graphql",
                                    "api", "endpoints", ""title"", ""version"", "application/json"]
                     is_html = text_lower.strip().startswith("<!doctype") or text_lower.strip().startswith("<html")
                     has_api_content = any(m in text_lower for m in api_markers)

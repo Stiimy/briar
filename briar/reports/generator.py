@@ -41,7 +41,7 @@ A total of **{len(self.findings)}** potential security issues were identified.
         for i, finding in enumerate(self.findings):
             severity = finding.get("severity", "Unknown")
             emoji = {"Critical":"🔴","High":"🟠","Medium":"🟡","Low":"🟢"}.get(severity, "⚪")
-            md += f"""### {emoji} Finding {i+1}: {finding.get('type', 'Vulnerability')}
+            md += f"""### {emoji} Finding {i+1}: {finding.get('type', finding.get('agent', 'Vulnerability'))}
 
 **Severity:** {severity}  
 **Agent:** {finding.get('agent', 'Unknown')}  

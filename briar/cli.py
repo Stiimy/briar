@@ -34,7 +34,7 @@ BANNER = """
   ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝[/bold red]
 [cyan]              Autonomous AI Pentester[/cyan]
 [dim]         11 providers · 12 agents · AGPL-3.0[/dim]
-[bold #cc0000]                  v0.4.10[/bold #cc0000]
+[bold #cc0000]                  v0.4.11[/bold #cc0000]
 """
 
 def check_ollama():
@@ -50,7 +50,7 @@ def check_ollama():
     return None
 
 @click.group(invoke_without_command=True)
-@click.version_option(version="0.4.10")
+@click.version_option(version="0.4.11")
 @click.pass_context
 def cli(ctx):
     """Briar — Autonomous AI Pentester"""
@@ -230,6 +230,10 @@ def scan(url, repo, provider, output, config_path, quick, deep, resume_ws):
                     console.print(f"[red]Provider '{provider}' crashed {provider_errors} times. Check configuration.[/red]")
                     break
             progress.advance(task)
+
+        # Sort findings by severity (Critical first)
+        sev_order = {"Critical":0, "High":1, "Medium":2, "Low":3, "Info":4, "Error":5}
+        findings.sort(key=lambda f: sev_order.get(f.get("severity", "Info"), 99))
 
         # Exploit validation — replay High/Critical findings
         progress.update(task, description="[yellow]Validating exploits...")

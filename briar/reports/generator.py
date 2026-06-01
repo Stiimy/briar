@@ -1,6 +1,7 @@
 """Briar Report Generator — 5 formats 📄📊📓🎨"""
 import os
 from datetime import datetime
+from briar import __version__
 
 class ReportGenerator:
     """Multi-format security report generator"""
@@ -22,7 +23,7 @@ class ReportGenerator:
 
 **Target:** {self.target}  
 **Date:** {datetime.now().strftime('%Y-%m-%d %H:%M')}  
-**Tool:** Briar v0.4.5  
+**Tool:** {__version__}  
 **Findings:** {len(self.findings)}
 
 ---

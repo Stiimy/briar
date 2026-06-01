@@ -133,10 +133,24 @@ async def home():
 
 @app.get("/scan/{scan_id}", response_class=HTMLResponse)
 async def scan_detail(scan_id: str):
-    workspaces = [d for d in os.listdir(WORKSPACES_DIR) if os.path.isdir(os.path.join(WORKSPACES_DIR, d))]
+    workspaces = sorted([d for d in os.listdir(WORKSPACES_DIR) if os.path.isdir(os.path.join(WORKSPACES_DIR, d))], reverse=True)
+    
+    # Find target URL from scan record
+    scans = load_scans()
+    target_url = None
+    for s in scans:
+        if s.get("scan_id") == scan_id:
+            target_url = s.get("target", "")
+            break
+    
+    # Match workspace by target URL (pick most recent)
     ws_name = None
-    for ws in workspaces:
-        if scan_id in ws: ws_name = ws; break
+    if target_url:
+        safe = target_url.replace("://", "_").replace("/", "_").replace(":", "_")[:50]
+        for ws in workspaces:
+            if safe in ws:
+                ws_name = ws
+                break
 
     findings = load_workspace_findings(ws_name) if ws_name else []
     findings_sorted = sorted(findings, key=lambda f: SEV_ORDER.get(f.get("severity", "Info"), 99))
@@ -229,7 +243,7 @@ async def launch_scan(url: str, provider: str = None, mode: str = "standard", ba
 
 @app.get("/health")
 async def health():
-    return {"status":"ok","version":"0.4.18","scans":len(load_scans())}
+    return {"status":"ok","version":"0.4.19","scans":len(load_scans())}
 
 def main():
     print("Briar Dashboard -> http://localhost:8233")

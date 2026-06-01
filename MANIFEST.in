@@ -1,0 +1,3 @@
+include briar/static/style.css
+include briar/templates/home.html
+include briar/templates/scan_detail.html

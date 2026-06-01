@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "briar-pentest"
-version = "0.4.15"
+version = "0.4.16"
 description = "Autonomous AI Pentester — find vulnerabilities before hackers do"
 readme = "README.md"
 license = {text = "AGPL-3.0"}
@@ -46,3 +46,6 @@ briar = "briar.cli:cli"
 Homepage = "https://github.com/Stiimy/briar"
 Repository = "https://github.com/Stiimy/briar"
 Issues = "https://github.com/Stiimy/briar/issues"
+
+[tool.setuptools.package-data]
+briar = ["static/*", "templates/*"]

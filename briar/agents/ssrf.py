@@ -33,7 +33,7 @@ class SSRFAgent:
         self.http = HTTPClient(timeout=8)
         self.name = "SSRF"
 
-    def scan(self, url: str, param_name: str = None, **kwargs) -> dict:
+    def scan(self, url: str, param_name: str = None, tech_context: str = "", **kwargs) -> dict:
         """Scan for SSRF with real payloads"""
         findings = []
         ssrf_params = param_name and [param_name] or SSRF_PARAMS

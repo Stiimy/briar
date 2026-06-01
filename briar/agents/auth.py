@@ -65,7 +65,7 @@ class AuthAgent:
             pass
         return findings
 
-    def scan(self, url: str, auth_type: str = "unknown", **kwargs) -> dict:
+    def scan(self, url: str, auth_type: str = "unknown", tech_context: str = "", **kwargs) -> dict:
         """Scan for authentication vulnerabilities"""
         findings = []
 

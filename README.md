@@ -7,6 +7,10 @@
 [![License](https://img.shields.io/badge/license-AGPL--3.0-green)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/Stiimy/briar?color=yellow)](https://github.com/Stiimy/briar)
 
+<p align="center">
+  <img src="assets/briar-logo.jpg" alt="Briar Logo" width="800">
+</p>
+
 Briar is an autonomous AI pentester. It scans web applications, injects **real payloads**, validates exploits, and generates professional security reports — powered by **11 AI providers** including a completely free local mode via Ollama.
 
 ```

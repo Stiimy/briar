@@ -34,7 +34,7 @@ BANNER = """
   ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝[/bold red]
 [cyan]              Autonomous AI Pentester[/cyan]
 [dim]         11 providers · 12 agents · AGPL-3.0[/dim]
-[bold #cc0000]                  v0.4.21[/bold #cc0000]
+[bold #cc0000]                  v0.4.22[/bold #cc0000]
 """
 
 def check_ollama():
@@ -50,7 +50,7 @@ def check_ollama():
     return None
 
 @click.group(invoke_without_command=True)
-@click.version_option(version="0.4.21")
+@click.version_option(version="0.4.22")
 @click.pass_context
 def cli(ctx):
     """Briar — Autonomous AI Pentester"""
@@ -159,7 +159,7 @@ def scan(url, repo, provider, output, config_path, quick, deep, resume_ws):
     if resume_ws:
         ws = Workspace.load(resume_ws)
         findings = ws.get_findings()
-        all_agents = ["recon","injection","xss","ssrf","auth","authz","csrf","upload","traversal","rce","api","secrets"]
+        all_agents = ["recon","planner","injection","xss","ssrf","auth","authz","csrf","upload","traversal","rce","api","secrets"]
         agents_to_run = ws.get_remaining_agents(all_agents)
         console.print(Panel.fit(
             f"[bold red]Briar Resume[/bold red]\n"
@@ -222,6 +222,9 @@ def scan(url, repo, provider, output, config_path, quick, deep, resume_ws):
                 # Store recon findings for subsequent agents
                 if agent_name == "recon" and result:
                     recon_data = result
+                # Pass recon to planner
+                if agent_name == "planner":
+                    result = run_agent("planner", provider, url=url, recon_data=recon_data)
             except Exception as e:
                 console.print(f"[red]  ⚡ {agent_name}: {e}[/red]")
                 provider_errors += 1
@@ -453,6 +456,50 @@ def status():
         f"[dim]Run [cyan]briar setup[/cyan] to change provider.[/dim]",
         title="Config"
     ))
+
+@cli.command()
+@click.argument("scan1", required=True)
+@click.argument("scan2", required=True)
+def diff(scan1, scan2):
+    """Compare two scans and show differences"""
+    from briar.core.diff import diff_workspaces
+    from briar.core.workspace import WORKSPACES_DIR
+    import os
+
+    # Find workspaces matching scan IDs
+    workspaces = sorted([d for d in os.listdir(WORKSPACES_DIR) if os.path.isdir(os.path.join(WORKSPACES_DIR, d))])
+    ws1 = ws2 = None
+    for ws in workspaces:
+        if scan1 in ws: ws1 = ws
+        if scan2 in ws: ws2 = ws
+
+    if not ws1 or not ws2:
+        console.print("[red]Workspace not found. Use briar workspaces to list.[/red]")
+        return
+
+    result = diff_workspaces(ws1, ws2)
+    s = result["summary"]
+
+    table = Table(title="Scan Diff")
+    table.add_column("Metric", style="cyan"); table.add_column("Value", style="green")
+    table.add_row("Scan 1", ws1[:30])
+    table.add_row("Scan 2", ws2[:30])
+    table.add_row("Old findings", str(s["total_old"]))
+    table.add_row("New findings", str(s["total_new"]))
+    table.add_row("New", f'[green]+{s["new_findings"]}[/green]')
+    table.add_row("Fixed", f'[red]-{s["fixed_findings"]}[/red]')
+    table.add_row("Changed severity", f'[yellow]~{s["changed_severity"]}[/yellow]')
+    table.add_row("Unchanged", f'[dim]={s["unchanged"]}[/dim]')
+    console.print(table)
+
+    if result["new"]:
+        console.print(f"\n[bold green]+{len(result['new'])} NEW findings:[/bold green]")
+        for f in result["new"][:10]:
+            console.print(f"  [green]NEW[/green] [{f.get('severity','?')}] {f.get('type','?')} — {f.get('agent','?')}")
+    if result["fixed"]:
+        console.print(f"\n[bold red]-{len(result['fixed'])} FIXED findings:[/bold red]")
+        for f in result["fixed"][:5]:
+            console.print(f"  [red]FIXED[/red] [{f.get('severity','?')}] {f.get('type','?')}")
 
 @cli.command()
 def serve():

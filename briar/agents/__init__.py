@@ -11,12 +11,14 @@ from .traversal import TraversalAgent
 from .rce import RCEAgent
 from .api import APIAgent
 from .secrets import SecretsAgent
+from .planner import PlannerAgent
 
 AGENTS = {
     "recon": ReconAgent, "injection": InjectionAgent, "xss": XSSAgent, "ssrf": SSRFAgent,
     "auth": AuthAgent, "authz": AuthZAgent, "csrf": CSRFAgent,
     "upload": UploadAgent, "traversal": TraversalAgent,
     "rce": RCEAgent, "api": APIAgent, "secrets": SecretsAgent,
+    "planner": PlannerAgent,
 }
 
 def run_agent(name, provider="ollama", **kwargs):

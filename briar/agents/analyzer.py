@@ -151,7 +151,7 @@ class SecurityAnalyzer:
         self.provider = get_provider(provider, model=model) if model else get_provider(provider)
 
     def analyze_endpoint(self, url: str, method: str = "GET", source_hint: str = "",
-                         tech_context: str = "") -> dict:
+                         tech_context: str = "", plan_context: str = "") -> dict:
         """Analyze a single endpoint for vulnerabilities."""
         prompt = f"""Analyze this endpoint for security vulnerabilities:
 
@@ -159,6 +159,7 @@ URL: {url}
 Method: {method}
 {f'Source code context: {source_hint}' if source_hint else ''}
 {tech_context}
+{plan_context}
 
 REQUIREMENT: For each vulnerability, provide COPY-PASTE READY remediation specific to the technology stack.
 Include exact nginx/Apache/gunicorn/Flask/Express/PHP config, exact code fixes, and verification commands.

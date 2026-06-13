@@ -12,6 +12,9 @@ from .rce import RCEAgent
 from .api import APIAgent
 from .secrets import SecretsAgent
 from .planner import PlannerAgent
+from .cve import CVEAgent
+from .gitbackup import GitBackupAgent
+from .jwt import JWTAgent
 
 AGENTS = {
     "recon": ReconAgent, "injection": InjectionAgent, "xss": XSSAgent, "ssrf": SSRFAgent,
@@ -19,6 +22,9 @@ AGENTS = {
     "upload": UploadAgent, "traversal": TraversalAgent,
     "rce": RCEAgent, "api": APIAgent, "secrets": SecretsAgent,
     "planner": PlannerAgent,
+    "cve": CVEAgent,
+    "gitbackup": GitBackupAgent,
+    "jwt": JWTAgent,
 }
 
 def run_agent(name, provider="ollama", **kwargs):

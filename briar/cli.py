@@ -34,7 +34,7 @@ BANNER = """
   ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝[/bold red]
 [cyan]              Autonomous AI Pentester[/cyan]
 [dim]         11 providers · 12 agents · AGPL-3.0[/dim]
-[bold #cc0000]                  v0.4.22[/bold #cc0000]
+[bold #cc0000]                  v0.4.23[/bold #cc0000]
 """
 
 def check_ollama():
@@ -50,7 +50,7 @@ def check_ollama():
     return None
 
 @click.group(invoke_without_command=True)
-@click.version_option(version="0.4.22")
+@click.version_option(version="0.4.23")
 @click.pass_context
 def cli(ctx):
     """Briar — Autonomous AI Pentester"""
@@ -159,7 +159,7 @@ def scan(url, repo, provider, output, config_path, quick, deep, resume_ws):
     if resume_ws:
         ws = Workspace.load(resume_ws)
         findings = ws.get_findings()
-        all_agents = ["recon","planner","injection","xss","ssrf","auth","authz","csrf","upload","traversal","rce","api","secrets"]
+        all_agents = ["recon","planner","gitbackup","jwt","cve","injection","xss","ssrf","auth","authz","csrf","upload","traversal","rce","api","secrets"]
         agents_to_run = ws.get_remaining_agents(all_agents)
         console.print(Panel.fit(
             f"[bold red]Briar Resume[/bold red]\n"

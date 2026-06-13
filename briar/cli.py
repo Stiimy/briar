@@ -34,7 +34,7 @@ BANNER = """
   ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝[/bold red]
 [cyan]              Autonomous AI Pentester[/cyan]
 [dim]         11 providers · 12 agents · AGPL-3.0[/dim]
-[bold #cc0000]                  v0.4.24[/bold #cc0000]
+[bold #cc0000]                  v0.4.25[/bold #cc0000]
 """
 
 def check_ollama():
@@ -50,7 +50,7 @@ def check_ollama():
     return None
 
 @click.group(invoke_without_command=True)
-@click.version_option(version="0.4.24")
+@click.version_option(version="0.4.25")
 @click.pass_context
 def cli(ctx):
     """Briar — Autonomous AI Pentester"""
@@ -156,6 +156,7 @@ def scan(url, repo, provider, output, config_path, quick, deep, resume_ws):
 
     # Resume existing workspace
     from briar.core.workspace import Workspace
+    from briar.core.animation import SylphAnimation
     if resume_ws:
         ws = Workspace.load(resume_ws)
         findings = ws.get_findings()
@@ -204,6 +205,7 @@ def scan(url, repo, provider, output, config_path, quick, deep, resume_ws):
 
         provider_errors = 0
         recon_data = None
+        sylph = SylphAnimation(len(agents_to_run))
         for idx, agent_name in enumerate(agents_to_run):
             progress.update(task, description=f"[{idx+1}/{len(agents_to_run)}] [yellow]{agent_name}...[/yellow]")
             try:
@@ -233,6 +235,8 @@ def scan(url, repo, provider, output, config_path, quick, deep, resume_ws):
                     console.print(f"[red]Provider '{provider}' crashed {provider_errors} times. Check configuration.[/red]")
                     break
             progress.advance(task)
+            sylph.update(idx, agent_name)
+            console.print(sylph.render())
 
         # Sort findings by severity (Critical first)
         sev_order = {"Critical":0, "High":1, "Medium":2, "Low":3, "Info":4, "Error":5}

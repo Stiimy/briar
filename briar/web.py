@@ -419,8 +419,8 @@ async def launch_scan(url: str, provider: str = None, mode: str = "standard", ba
 
     def run_scan():
         from briar.agents import run_agent
-        all_agents = ["recon","injection","xss","ssrf","auth","authz","csrf","upload","traversal","rce","api","secrets"]
-        agent_count = 12 if mode == "deep" else 4 if mode == "quick" else 8
+        all_agents = ["recon","planner","gitbackup","jwt","cve","injection","xss","ssrf","auth","authz","csrf","upload","traversal","rce","api","secrets"]
+        agent_count = 12 if mode == "deep" else 4 if mode == "quick" else 8 if mode == "standard" else 16
         agents = all_agents[:agent_count]
         findings = []
         for agent_name in agents:

@@ -163,6 +163,22 @@ tags: [security, pentest, briar]
 - **Last scan:** {self.scan_time}
 - **Tool:** [[Briar]]
 
+```chart
+type: pie
+title: Severity Distribution
+labels: [Critical, High, Medium, Low, Info]
+series:
+  - data: [{sum(1 for f in self.findings if f.get('severity')=='Critical')}, {sum(1 for f in self.findings if f.get('severity')=='High')}, {sum(1 for f in self.findings if f.get('severity')=='Medium')}, {sum(1 for f in self.findings if f.get('severity')=='Low')}, {sum(1 for f in self.findings if f.get('severity')=='Info')}]
+```
+
+```chart
+type: bar
+title: Findings by Agent
+labels: [{', '.join(f'"{a}"' for a in set(f.get('agent','?') for f in self.findings))}]
+series:
+  - data: [{', '.join(str(sum(1 for f in self.findings if f.get('agent')==a)) for a in set(f.get('agent','?') for f in self.findings))}]
+```
+
 {scan_section}
 """
 

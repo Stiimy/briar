@@ -1,4 +1,4 @@
-# 🥀 Briar — Autonomous AI Pentester
+# 🥀 Briar — Autonomous AI Pentester (READ ME OUTDATED) My lazy ass is too lazy to update it
 
 > *Find vulnerabilities before hackers do. Free. Open Source. No Docker.*
 

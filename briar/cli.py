@@ -34,7 +34,7 @@ BANNER = """
   ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝[/bold red]
 [cyan]              Autonomous AI Pentester[/cyan]
 [dim]         11 providers · 12 agents · AGPL-3.0[/dim]
-[bold #cc0000]                  v0.4.28[/bold #cc0000]
+[bold #cc0000]                  v0.4.29[/bold #cc0000]
 """
 
 def check_ollama():
@@ -50,7 +50,7 @@ def check_ollama():
     return None
 
 @click.group(invoke_without_command=True)
-@click.version_option(version="0.4.28")
+@click.version_option(version="0.4.29")
 @click.pass_context
 def cli(ctx):
     """Briar — Autonomous AI Pentester"""

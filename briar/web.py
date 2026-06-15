@@ -98,21 +98,13 @@ def get_saved_provider():
 PROVIDERS = ["ollama","openai","anthropic","deepseek","groq","mistral","xai","google","openrouter","together","custom"]
 
 def find_workspace(scan_id: str) -> str:
-    """Find workspace by stored ws_name or target URL."""
+    """Find workspace by stored ws_name in scan record."""
     scans = load_scans()
     for s in scans:
         if s.get("scan_id") == scan_id:
-            # First try stored workspace name
             ws_stored = s.get("workspace")
             if ws_stored and os.path.isdir(os.path.join(WORKSPACES_DIR, ws_stored)):
                 return ws_stored
-            # Fallback: search by target URL
-            target_url = s.get("target", "")
-            workspaces = sorted([d for d in os.listdir(WORKSPACES_DIR) if os.path.isdir(os.path.join(WORKSPACES_DIR, d))], reverse=True)
-            safe = target_url.replace("://", "_").replace("/", "_").replace(":", "_")[:50]
-            for ws in workspaces:
-                if safe in ws:
-                    return ws
             break
     return None
 
@@ -126,34 +118,23 @@ def find_workspace_latest(target_url: str) -> str:
     return None
 
 def report_exists(scan_id: str) -> dict:
-    """Check what reports exist for a scan."""
+    """Check reports for a scan using stored output_dir."""
     scans = load_scans()
-    target_url = None
     for s in scans:
         if s.get("scan_id") == scan_id:
-            target_url = s.get("target", "")
-            break
-    if not target_url:
-        return {}
-    from urllib.parse import urlparse
-    host = urlparse(target_url).hostname or "unknown"
-    host_slug = host.replace(".", "-")[:40]
-    result = {}
-    cwd = os.getcwd()
-    reports_dir = os.path.join(cwd, "reports")
-    # Check latest dated report
-    import glob
-    pattern = os.path.join(reports_dir, f"{host_slug}_*.md")
-    md_files = sorted(glob.glob(pattern), reverse=True)
-    if md_files:
-        result["markdown"] = os.path.basename(md_files[0])
-    html_path = os.path.join(reports_dir, "rapport.html")
-    if os.path.exists(html_path):
-        result["html"] = "rapport.html"
-    obsidian_dir = os.path.join(reports_dir, "obsidian")
-    if os.path.exists(obsidian_dir):
-        result["obsidian"] = "obsidian/"
-    return result
+            out = s.get("output_dir", "")
+            if out:
+                out = os.path.expanduser(out)
+            else:
+                out = os.path.join(os.getcwd(), "reports")
+            result = {}
+            if os.path.isdir(out):
+                md_files = [f for f in os.listdir(out) if f.endswith('.md') and not f.startswith('.')]
+                if md_files: result["markdown"] = sorted(md_files)[-1]
+                if os.path.exists(os.path.join(out, "rapport.html")): result["html"] = "rapport.html"
+                if os.path.isdir(os.path.join(out, "obsidian")): result["obsidian"] = "obsidian/"
+            return result
+    return {}
 
 @app.get("/", response_class=HTMLResponse)
 async def home():
@@ -401,24 +382,16 @@ async def reports():
 @app.get("/report/{scan_id}", response_class=HTMLResponse)
 async def view_report(scan_id: str):
     scans = load_scans()
-    target_url = ""
     for s in scans:
         if s.get("scan_id") == scan_id:
-            target_url = s.get("target", "")
+            out = os.path.expanduser(s.get("output_dir", ""))
+            if out and os.path.isdir(out):
+                html_path = os.path.join(out, "rapport.html")
+                if os.path.exists(html_path):
+                    with open(html_path) as f:
+                        return HTMLResponse(f.read())
             break
-    if not target_url:
-        return HTMLResponse("<h2>Scan not found</h2>")
-
-    from urllib.parse import urlparse
-    host = urlparse(target_url).hostname or "unknown"
-    host_slug = host.replace(".", "-")[:40]
-    import glob
-    reports_dir = os.path.join(os.getcwd(), "reports")
-    html_files = sorted(glob.glob(os.path.join(reports_dir, "rapport*.html")), reverse=True)
-    if html_files:
-        with open(html_files[0]) as f:
-            return HTMLResponse(f.read())
-    return HTMLResponse(f"<body style='background:#0d0d1a;color:#cdd6f4;font-family:sans-serif;padding:40px'><h2>No HTML report found</h2><p>Run a scan first.</p></body>")
+    return HTMLResponse("<body style='background:#0d0d1a;color:#cdd6f4;font-family:sans-serif;padding:40px'><h2>No HTML report found</h2><p>Run a scan that generates a report.</p></body>")
 
 @app.get("/scan")
 async def launch_scan(url: str, provider: str = None, mode: str = "standard", background_tasks: BackgroundTasks = None):
@@ -427,9 +400,10 @@ async def launch_scan(url: str, provider: str = None, mode: str = "standard", ba
     scan_id = datetime.now().strftime("%Y%m%d%H%M%S")
     from briar.core.workspace import Workspace
     ws = Workspace(url, mode)
+    out_dir = os.path.expanduser(f"~/.briar/reports/{ws.name}")
     scan_record = {"scan_id": scan_id, "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
                    "target": url, "provider": provider, "mode": mode, "status": "running",
-                   "findings": 0, "workspace": ws.name}
+                   "findings": 0, "workspace": ws.name, "output_dir": out_dir}
     scans = load_scans()
     scans.append(scan_record)
     os.makedirs(os.path.dirname(SCANS_FILE), exist_ok=True)
@@ -453,10 +427,9 @@ async def launch_scan(url: str, provider: str = None, mode: str = "standard", ba
         try:
             from briar.reports.generator import ReportGenerator
             from briar.reports.obsidian import ObsidianGenerator
-            from briar.reports.html_report import HTMLReportGenerator
-            ReportGenerator(url, findings, "./reports").all_formats()
-            ObsidianGenerator(url, findings, "./reports/obsidian").generate()
-            HTMLReportGenerator(url, findings, "./reports").generate()
+            if findings:
+                ReportGenerator(url, findings, out_dir).all_formats()
+                ObsidianGenerator(url, findings, f"{out_dir}/obsidian").generate()
         except: pass
 
         scans = load_scans()

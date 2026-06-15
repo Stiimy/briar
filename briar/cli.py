@@ -34,7 +34,7 @@ BANNER = """
   ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝[/bold red]
 [cyan]              Autonomous AI Pentester[/cyan]
 [dim]         11 providers · 16 agents · AGPL-3.0[/dim]
-[bold #cc0000]                  v0.4.31[/bold #cc0000]
+[bold #cc0000]                  v0.4.32[/bold #cc0000]
 """
 
 def check_ollama():
@@ -50,7 +50,7 @@ def check_ollama():
     return None
 
 @click.group(invoke_without_command=True)
-@click.version_option(version="0.4.31")
+@click.version_option(version="0.4.32")
 @click.pass_context
 def cli(ctx):
     """Briar — Autonomous AI Pentester"""
@@ -241,6 +241,34 @@ def scan(url, repo, provider, output, config_path, quick, deep, resume_ws):
         # Sort findings by severity (Critical first)
         sev_order = {"Critical":0, "High":1, "Medium":2, "Low":3, "Info":4, "Error":5}
         findings.sort(key=lambda f: sev_order.get(f.get("severity", "Info"), 99))
+
+        # Filter out noise
+        noise_patterns = ["No hardcoded secrets found", "No login form found", 
+                          "No findings", "Browser exploit failed"]
+        tests_done = []
+        clean_findings = []
+        for f in findings:
+            sev = f.get("severity", "")
+            analysis = f.get("analysis", "")
+            # Skip errors and noisy info
+            if sev == "Error":
+                continue
+            if sev == "Info" and any(p in analysis for p in noise_patterns):
+                tests_done.append(f.get("agent", "?"))
+                continue
+            clean_findings.append(f)
+        findings = clean_findings
+
+        # Add "tests effectués" note
+        if tests_done:
+            findings.append({
+                "type": "Tests effectués sans succès",
+                "severity": "Info",
+                "agent": "Briar",
+                "url": url,
+                "analysis": f"Les catégories suivantes ont été testées sans trouver de vulnérabilité exploitable : {', '.join(sorted(set(tests_done)))}. Ceci est normal — Briar ne reporte que ce qui est confirmé.",
+                "confirmed": False,
+            })
 
         # Exploit validation — replay High/Critical findings
         progress.update(task, description="[yellow]Validating exploits...")

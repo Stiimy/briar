@@ -33,8 +33,8 @@ BANNER = """
   ██████╔╝██║  ██║██║██║  ██║██║  ██║
   ╚═════╝ ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝  ╚═╝[/bold red]
 [cyan]              Autonomous AI Pentester[/cyan]
-[dim]         11 providers · 12 agents · AGPL-3.0[/dim]
-[bold #cc0000]                  v0.4.30[/bold #cc0000]
+[dim]         11 providers · 16 agents · AGPL-3.0[/dim]
+[bold #cc0000]                  v0.4.31[/bold #cc0000]
 """
 
 def check_ollama():
@@ -50,7 +50,7 @@ def check_ollama():
     return None
 
 @click.group(invoke_without_command=True)
-@click.version_option(version="0.4.30")
+@click.version_option(version="0.4.31")
 @click.pass_context
 def cli(ctx):
     """Briar — Autonomous AI Pentester"""
@@ -107,7 +107,7 @@ def setup():
 @click.option("-o", "--output", default="./reports", help="Output dir")
 @click.option("-c", "--config", "config_path", help="YAML config file (auth, rules, target)")
 @click.option("--quick", is_flag=True, help="Quick scan (4 agents)")
-@click.option("--deep", is_flag=True, help="Deep scan (all 12 agents + browser)")
+@click.option("--deep", is_flag=True, help="Deep scan (all 16 agents + browser)")
 @click.option("--resume", "resume_ws", help="Resume a workspace by name")
 def scan(url, repo, provider, output, config_path, quick, deep, resume_ws):
     """Run a pentest scan"""
@@ -152,7 +152,7 @@ def scan(url, repo, provider, output, config_path, quick, deep, resume_ws):
         console.print("[red]URL required (-u or config file)[/red]"); sys.exit(1)
 
     mode = "deep" if deep else "quick" if quick else "standard"
-    agent_count = 12 if deep else 4 if quick else 8
+    agent_count = 16 if deep else 4 if quick else 8
 
     # Resume existing workspace
     from briar.core.workspace import Workspace
@@ -169,7 +169,7 @@ def scan(url, repo, provider, output, config_path, quick, deep, resume_ws):
     else:
         ws = Workspace(url, mode)
         findings = []
-        all_agents = ["recon","injection","xss","ssrf","auth","authz","csrf","upload","traversal","rce","api","secrets"]
+        all_agents = ["recon","planner","gitbackup","jwt","cve","injection","xss","ssrf","auth","authz","csrf","upload","traversal","rce","api","secrets"]
         agents_to_run = all_agents[:agent_count]
 
     console.print(Panel.fit(

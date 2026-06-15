@@ -73,6 +73,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelect
 </script>"""
 
 REFRESH_5S = '<meta http-equiv="refresh" content="5">'
+REFRESH_15S = '<meta http-equiv="refresh" content="15">'
 
 def load_scans():
     try:
@@ -184,7 +185,7 @@ async def home():
 
     return HTMLResponse(f"""<!DOCTYPE html>
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Briar Dashboard</title>{CSS}{REFRESH_5S if running else ''}</head><body>
+<title>Briar Dashboard</title>{CSS}</head><body>
 <div class="header"><div><h1>Briar Dashboard</h1><p class="sub">Autonomous AI Pentester</p></div>
 <div class="nav-links"><a href="/" class="active">Scans</a><a href="/reports">Reports</a><a href="/health">API</a></div></div>
 <div class="container">
@@ -281,7 +282,7 @@ async def scan_detail(scan_id: str):
 <html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Scan {scan_id} - Briar</title>{CSS}</head><body>
 <div class="header"><div><h1><a href="/" style="color:var(--red)">Briar</a> / Scan</h1>
-<p class="sub">{target_url}</p></div><div style="display:flex;gap:8px">{report_links}<a href="/" class="btn btn-sm">Back</a></div></div>
+<p class="sub">{target_url}</p></div><div style="display:flex;gap:8px">{report_links}<a href="/stop/{scan_id}" class="btn btn-sm" style="color:var(--high);border-color:var(--high)">Stop</a><a href="/" class="btn btn-sm">Back</a></div></div>
 <div class="container">
 <div class="stats">
 <div class="stat"><div class="n">{total}</div><div class="l">Total</div></div>
@@ -446,6 +447,17 @@ async def launch_scan(url: str, provider: str = None, mode: str = "standard", ba
         with open(SCANS_FILE, "w") as f: json.dump(scans, f, indent=2)
 
     if background_tasks: background_tasks.add_task(run_scan)
+    return RedirectResponse(url="/", status_code=303)
+
+@app.get("/stop/{scan_id}")
+async def stop_scan(scan_id: str):
+    """Mark a running scan as stopped."""
+    scans = load_scans()
+    for s in scans:
+        if s.get("scan_id") == scan_id and s.get("status") == "running":
+            s["status"] = "stopped"
+            break
+    with open(SCANS_FILE, "w") as f: json.dump(scans, f, indent=2)
     return RedirectResponse(url="/", status_code=303)
 
 @app.get("/health")

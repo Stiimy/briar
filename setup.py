@@ -25,3 +25,4 @@ setup(
         "Topic :: Security",
     ],
 )
+# Black rose didn't do it
